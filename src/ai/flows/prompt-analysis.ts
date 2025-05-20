@@ -1,5 +1,6 @@
+
 // This is an AI-powered function that analyzes user-provided prompts and offers suggestions for improvement.
-// It takes a prompt, LLM type, and research depth as input and returns an analysis with tailored suggestions.
+// It takes a prompt, LLM type, and research depth as input and returns an analysis with tailored suggestions and a recommended LLM model.
 // - analyzePrompt - Analyzes the prompt and provides improvement suggestions.
 // - AnalyzePromptInput - Input type for analyzePrompt.
 // - AnalyzePromptOutput - Output type for analyzePrompt.
@@ -19,6 +20,8 @@ export type AnalyzePromptInput = z.infer<typeof AnalyzePromptInputSchema>;
 const AnalyzePromptOutputSchema = z.object({
   analysis: z.string().describe('The AI analysis of the prompt.'),
   suggestions: z.array(z.string()).describe('Suggestions for improving the prompt.'),
+  suggestedModel: z.string().optional().describe('The suggested LLM model from the provided list that would be best for this prompt.'),
+  modelSuggestionReasoning: z.string().optional().describe('The reasoning behind suggesting the specific LLM model.'),
 });
 export type AnalyzePromptOutput = z.infer<typeof AnalyzePromptOutputSchema>;
 
@@ -26,11 +29,32 @@ export async function analyzePrompt(input: AnalyzePromptInput): Promise<AnalyzeP
   return analyzePromptFlow(input);
 }
 
+const availableModels = [
+  "OpenAI GPT-4.1",
+  "OpenAI GPT-4o",
+  "OpenAI GPT-3.5", // Clarified from "OpenAl o3"
+  "OpenAI GPT-4 Mini", // Clarified from "OpenAl o4-mini"
+  "Anthropic Claude 3.7 Sonnet",
+  "Anthropic Claude 3 Opus",
+  "Google Gemini 2.5 Pro",
+  "Google Gemini Ultra 1.0",
+  "Meta Llama 4 Maverick",
+  "Meta Llama 4 Scout",
+  "Meta Llama 3.1 70B",
+  "Mistral Large 2", // Simplified from "Mistral Large 2 (2407/Nov '24)"
+  "Mistral Mixtral 8x22B Instruct",
+  "Mistral Codestral 22B", // Simplified from "Mistral Codestral (22B)"
+  "Cohere Command A",
+  "Cohere Command R+",
+  "Aleph Alpha Pharia-1-LLM-7B-control",
+  "Perplexity Sonar Reasoning Pro High" // Simplified from "Perplexity Sonar-Reasoning-Pro-High"
+];
+
 const analyzePromptPrompt = ai.definePrompt({
   name: 'analyzePromptPrompt',
   input: {schema: AnalyzePromptInputSchema},
   output: {schema: AnalyzePromptOutputSchema},
-  prompt: `You are an AI prompt analyzer. Analyze the following prompt and provide suggestions for improvement.
+  prompt: `You are an AI prompt analyzer and LLM consultant. Analyze the following prompt and provide suggestions for improvement.
 Consider the context provided:
 {{#if llmType}}
 - LLM Type: {{{llmType}}} (Tailor suggestions if the prompt is for code generation, creative writing, image generation, specific research, or general purpose.)
@@ -44,7 +68,20 @@ Consider the context provided:
 Prompt: {{{prompt}}}
 
 Analysis:
-Suggestions: (Provide an analysis of the prompt and specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type and research depth.)`,
+Provide your analysis of the prompt here.
+
+Suggestions:
+Provide an array of specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type and research depth.
+
+Model Suggestion:
+Based on the prompt's content, the selected LLM Type (if any), and whether it's for deep research, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice. If no specific model from the list clearly stands out or if the prompt is too generic, you can omit the 'suggestedModel' and 'modelSuggestionReasoning' fields in your output.
+
+Available Models:
+${availableModels.map(m => `- ${m}`).join('\n')}
+
+Output Format:
+Ensure your output is a JSON object adhering to the specified output schema, including 'analysis', 'suggestions', and optionally 'suggestedModel' and 'modelSuggestionReasoning'.
+`,
 });
 
 const analyzePromptFlow = ai.defineFlow(
@@ -55,6 +92,15 @@ const analyzePromptFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await analyzePromptPrompt(input);
+    // Ensure suggestions is always an array, even if the model omits it or returns a string
+    if (output && typeof output.suggestions === 'string') {
+      // @ts-ignore
+      output.suggestions = [output.suggestions];
+    } else if (output && !Array.isArray(output.suggestions)) {
+       // @ts-ignore
+      output.suggestions = [];
+    }
     return output!;
   }
 );
+

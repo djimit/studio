@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -65,7 +66,7 @@ export default function PromptRefinerPage() {
   };
 
   const handleGenerateEnhancedPrompt = async () => {
-    if (!originalPrompt || !analysisResult) return;
+    if (!originalPrompt || !analysisResult || !analysisResult.suggestions) return;
 
     setIsLoadingEnhancedPrompt(true);
     setEnhancedPrompt(null); // Reset previous result
@@ -111,7 +112,7 @@ export default function PromptRefinerPage() {
             />
           )}
 
-          {analysisResult && !analysisError && (
+          {analysisResult && !analysisError && analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
             <>
               <Separator />
               <FormatSelector
@@ -139,3 +140,4 @@ export default function PromptRefinerPage() {
     </div>
   );
 }
+
