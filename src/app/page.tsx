@@ -7,6 +7,8 @@ import { analyzePrompt } from '@/ai/flows/prompt-analysis';
 import { generateEnhancedPrompt } from '@/ai/flows/enhanced-prompt-generation';
 import { applySingleSuggestion } from '@/ai/flows/apply-single-suggestion-flow';
 import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-suggestion-flow';
+import { explainSuggestion, type ExplainSuggestionInput, type ExplainSuggestionOutput } from '@/ai/flows/explain-suggestion-flow';
+
 
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PromptUploader } from '@/components/prompt/PromptUploader';
@@ -20,6 +22,9 @@ import { Separator } from '@/components/ui/separator';
 
 export default function PromptRefinerPage() {
   const [originalPrompt, setOriginalPrompt] = useState<string>('');
+  const [originalLlmType, setOriginalLlmType] = useState<LlmType | undefined>(undefined);
+  const [originalIsDeepResearch, setOriginalIsDeepResearch] = useState<boolean | undefined>(undefined);
+  
   const [analysisResult, setAnalysisResult] = useState<AnalyzePromptOutput | null>(null);
   const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<'markdown' | 'json'>('markdown');
@@ -34,11 +39,19 @@ export default function PromptRefinerPage() {
   const [suggestionPreview, setSuggestionPreview] = useState<ApplySingleSuggestionOutput | null>(null);
   const [suggestionPreviewError, setSuggestionPreviewError] = useState<string | null>(null);
 
+  const [suggestionExplanation, setSuggestionExplanation] = useState<string | null>(null);
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState<boolean>(false);
+  const [explanationError, setExplanationError] = useState<string | null>(null);
+  const [currentSuggestionForExplanation, setCurrentSuggestionForExplanation] = useState<string | null>(null);
+
 
   const { toast } = useToast();
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
     setOriginalPrompt(prompt);
+    setOriginalLlmType(llmType);
+    setOriginalIsDeepResearch(isDeepResearch);
+
     setIsLoadingAnalysis(true);
     setAnalysisResult(null); 
     setEnhancedPrompt(null);
@@ -46,6 +59,10 @@ export default function PromptRefinerPage() {
     setAnalysisError(null);
     setGenerationError(null);
     setSuggestionPreviewError(null);
+    setSuggestionExplanation(null);
+    setCurrentSuggestionForExplanation(null);
+    setExplanationError(null);
+
 
     const analysisInput: AnalyzePromptInput = { prompt };
     if (llmType) {
@@ -107,6 +124,46 @@ export default function PromptRefinerPage() {
     }
   };
 
+  const handleExplainSuggestion = async (suggestion: string) => {
+    if (!originalPrompt) return;
+
+    setCurrentSuggestionForExplanation(suggestion);
+    setIsLoadingExplanation(true);
+    setSuggestionExplanation(null);
+    setExplanationError(null);
+
+    const input: ExplainSuggestionInput = {
+      originalPrompt,
+      suggestionToExplain: suggestion,
+    };
+    if (originalLlmType) {
+      input.llmType = originalLlmType;
+    }
+    if (originalIsDeepResearch !== undefined) {
+      input.isDeepResearch = originalIsDeepResearch;
+    }
+
+    try {
+      const result = await explainSuggestion(input);
+      setSuggestionExplanation(result.explanation);
+      toast({
+        title: "Suggestion Explained",
+        description: "Successfully generated explanation.",
+      });
+    } catch (error) {
+      console.error("Error explaining suggestion:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during explanation.";
+      setExplanationError(errorMessage);
+      toast({
+        title: "Explanation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingExplanation(false);
+    }
+  };
+
 
   const handleGenerateEnhancedPrompt = async () => {
     if (!originalPrompt || !analysisResult || !analysisResult.suggestions) return;
@@ -154,6 +211,16 @@ export default function PromptRefinerPage() {
               error={analysisError}
               onPreviewSuggestion={handlePreviewSuggestion}
               isPreviewingSuggestion={isPreviewingSuggestion}
+              onExplainSuggestion={handleExplainSuggestion}
+              isLoadingExplanation={isLoadingExplanation}
+              suggestionExplanation={suggestionExplanation}
+              explanationError={explanationError}
+              currentSuggestionForExplanation={currentSuggestionForExplanation}
+              onCloseExplanationDialog={() => {
+                setSuggestionExplanation(null);
+                setCurrentSuggestionForExplanation(null);
+                setExplanationError(null);
+              }}
             />
           )}
 
@@ -172,7 +239,7 @@ export default function PromptRefinerPage() {
               <FormatSelector
                 selectedFormat={selectedFormat}
                 onFormatChange={setSelectedFormat}
-                disabled={isLoadingEnhancedPrompt || isPreviewingSuggestion}
+                disabled={isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation}
               />
               <Separator />
               <EnhancedPromptDisplay
