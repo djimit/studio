@@ -6,20 +6,24 @@ import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Wand2, Brain, SearchCheck, Copy } from 'lucide-react';
+import { Loader2, Wand2, Brain, SearchCheck, Copy, Users } from 'lucide-react'; // Added Users icon
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import type { Persona } from '@/lib/personas';
 
 export type LlmType = 'general' | 'code' | 'creative' | 'image' | 'research';
 
 interface PromptUploaderProps {
-  onAnalyze: (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => void;
+  onAnalyze: (prompt: string, llmType?: LlmType, isDeepResearch?: boolean, personaInstructions?: string) => void;
   isLoading: boolean;
   initialPrompt?: string;
   initialLlmType?: LlmType;
   initialIsDeepResearch?: boolean;
+  personas: Persona[];
+  selectedPersonaId?: string;
+  onSelectPersona: (personaId?: string) => void;
 }
 
 export function PromptUploader({ 
@@ -28,6 +32,9 @@ export function PromptUploader({
   initialPrompt = '',
   initialLlmType,
   initialIsDeepResearch = false,
+  personas,
+  selectedPersonaId,
+  onSelectPersona,
 }: PromptUploaderProps) {
   const [prompt, setPrompt] = useState(initialPrompt);
   const [llmType, setLlmType] = useState<LlmType | undefined>(initialLlmType);
@@ -49,7 +56,8 @@ export function PromptUploader({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
-      onAnalyze(prompt, llmType, isDeepResearch);
+      const activePersona = personas.find(p => p.id === selectedPersonaId);
+      onAnalyze(prompt, llmType, isDeepResearch, activePersona?.instructions);
     }
   };
 
@@ -86,7 +94,7 @@ export function PromptUploader({
           <span>Refine Your Prompt</span>
         </CardTitle>
         <CardDescription>
-          Enter your prompt below, or select a template to get started. Provide additional context for more tailored suggestions.
+          Enter your prompt below, or select a template to get started. Provide additional context like LLM type, research depth, and an active AI persona for more tailored suggestions.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,7 +105,7 @@ export function PromptUploader({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={6}
-              className="text-base pr-12" // Add padding for the button
+              className="text-base pr-12" 
               disabled={isLoading}
             />
             <Button
@@ -112,14 +120,14 @@ export function PromptUploader({
               <Copy className="h-4 w-4" />
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="llmTypeSelect" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
                 LLM Type (Optional)
               </Label>
               <Select
-                value={llmType || ''} // Ensure value is not undefined for Select
+                value={llmType || ''} 
                 onValueChange={(value) => setLlmType(value as LlmType || undefined)}
                 disabled={isLoading}
                 name="llmTypeSelect"
@@ -136,19 +144,41 @@ export function PromptUploader({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2 md:pt-8"> {/* Adjusted padding for alignment */}
-                <div className="flex items-center space-x-2">
-                    <Checkbox
-                        id="isDeepResearchCheckbox"
-                        checked={isDeepResearch}
-                        onCheckedChange={(checked) => setIsDeepResearch(checked as boolean)}
-                        disabled={isLoading}
-                    />
-                    <Label htmlFor="isDeepResearchCheckbox" className="flex items-center gap-2 cursor-pointer">
-                         <SearchCheck className="h-4 w-4" />
-                        Is this for deep research?
-                    </Label>
-                </div>
+            <div className="space-y-2">
+                <Label htmlFor="personaSelect" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    AI Persona (Optional)
+                </Label>
+                <Select
+                    value={selectedPersonaId || ''}
+                    onValueChange={(value) => onSelectPersona(value || undefined)}
+                    disabled={isLoading || personas.length === 0}
+                    name="personaSelect"
+                >
+                    <SelectTrigger id="personaSelect" className="w-full">
+                        <SelectValue placeholder={personas.length === 0 ? "No personas available" : "Select a persona"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {personas.map(persona => (
+                            <SelectItem key={persona.id} value={persona.id}>
+                                {persona.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-center space-x-2 md:pt-8"> {/* Adjusted padding for alignment */}
+                <Checkbox
+                    id="isDeepResearchCheckbox"
+                    checked={isDeepResearch}
+                    onCheckedChange={(checked) => setIsDeepResearch(checked as boolean)}
+                    disabled={isLoading}
+                />
+                <Label htmlFor="isDeepResearchCheckbox" className="flex items-center gap-2 cursor-pointer">
+                     <SearchCheck className="h-4 w-4" />
+                    Is this for deep research?
+                </Label>
             </div>
           </div>
           <Button type="submit" disabled={isLoading || !prompt.trim()} className="w-full sm:w-auto">

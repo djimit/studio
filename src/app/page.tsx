@@ -9,6 +9,9 @@ import { applySingleSuggestion } from '@/ai/flows/apply-single-suggestion-flow';
 import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-suggestion-flow';
 import { explainSuggestion, type ExplainSuggestionInput, type ExplainSuggestionOutput } from '@/ai/flows/explain-suggestion-flow';
 import { getHistory, addHistoryItem, clearHistory as clearHistoryStorage, type HistoryItem } from '@/lib/history';
+import type { Persona } from '@/lib/personas';
+import { getPersonas, addPersona as addPersonaStorage, deletePersona as deletePersonaStorage } from '@/lib/personas';
+import type { PersonaFormData } from '@/components/persona/CreatePersonaDialog';
 
 
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -20,6 +23,7 @@ import { FormatSelector } from '@/components/prompt/FormatSelector';
 import { EnhancedPromptDisplay } from '@/components/prompt/EnhancedPromptDisplay';
 import { PromptTemplateLibrary, type PromptTemplate } from '@/components/prompt/PromptTemplateLibrary';
 import { PromptHistoryDisplay } from '@/components/prompt/PromptHistoryDisplay';
+import { PersonaManager } from '@/components/persona/PersonaManager';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
@@ -84,7 +88,7 @@ const promptTemplates: PromptTemplate[] = [
 
 // Helper function to extract a more detailed error message
 const getDetailedErrorMessage = (error: unknown, context: string): string => {
-  console.error(`Error during ${context}:`, error); // Log the full error for debugging
+  console.error(`Error during ${context}:`, error); 
 
   if (error instanceof Error) {
     return error.message;
@@ -92,7 +96,6 @@ const getDetailedErrorMessage = (error: unknown, context: string): string => {
   if (typeof error === 'string') {
     return error;
   }
-  // Attempt to extract message if it's an object with a message property (common for API errors)
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
   }
@@ -129,10 +132,14 @@ export default function PromptRefinerPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [selectedSuggestionsForEnhancement, setSelectedSuggestionsForEnhancement] = useState<Record<string, boolean>>({});
 
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | undefined>(undefined);
+
   const { toast } = useToast();
 
   useEffect(() => {
     setHistory(getHistory());
+    setPersonas(getPersonas());
   }, []);
 
   const resetSecondaryStates = () => {
@@ -147,12 +154,14 @@ export default function PromptRefinerPage() {
     setCurrentSuggestionForExplanation(null);
     setExplanationError(null);
     setSelectedSuggestionsForEnhancement({});
+    // Note: selectedPersonaId is NOT reset here, user's persona choice should persist
   }
 
-  const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
+  const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean, personaInstructions?: string) => {
     setOriginalPrompt(prompt); 
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
+    // selectedPersonaId is already managed by its own handler
 
     setIsLoadingAnalysis(true);
     resetSecondaryStates(); 
@@ -165,6 +174,9 @@ export default function PromptRefinerPage() {
     if (isDeepResearch !== undefined) {
       analysisInput.isDeepResearch = isDeepResearch;
     }
+    if (personaInstructions) {
+      analysisInput.personaInstructions = personaInstructions;
+    }
 
     try {
       const result = await analyzePrompt(analysisInput);
@@ -174,7 +186,15 @@ export default function PromptRefinerPage() {
         result.suggestions.forEach(s => initialSelectedSuggestions[s] = true); 
         setSelectedSuggestionsForEnhancement(initialSelectedSuggestions);
       }
-      setHistory(addHistoryItem({ originalPrompt: prompt, originalLlmType: llmType, originalIsDeepResearch: isDeepResearch, analysisResult: result }));
+      // Add to history with current persona context
+      const activePersona = personas.find(p => p.id === selectedPersonaId);
+      setHistory(addHistoryItem({ 
+        originalPrompt: prompt, 
+        originalLlmType: llmType, 
+        originalIsDeepResearch: isDeepResearch, 
+        // Consider storing selectedPersonaId or personaName in history if needed for display
+        analysisResult: result 
+      }));
       toast({
         title: "Analysis Complete",
         description: "Prompt analysis finished successfully.",
@@ -228,9 +248,6 @@ export default function PromptRefinerPage() {
 
   const handleApplyPreviewToEditor = (previewText: string) => {
     setOriginalPrompt(previewText);
-    // Preserve llmType and isDeepResearch when applying preview
-    // setOriginalLlmType remains as is
-    // setOriginalIsDeepResearch remains as is
     resetSecondaryStates(); 
     toast({
       title: "Preview Applied",
@@ -256,6 +273,7 @@ export default function PromptRefinerPage() {
     if (originalIsDeepResearch !== undefined) {
       input.isDeepResearch = originalIsDeepResearch;
     }
+    // TODO: In a future step, pass personaInstructions to explainSuggestion flow if a persona is active
 
     try {
       const result = await explainSuggestion(input);
@@ -289,6 +307,7 @@ export default function PromptRefinerPage() {
       (suggestion) => selectedSuggestionsForEnhancement[suggestion]
     );
 
+    // TODO: In a future step, pass personaInstructions to generateEnhancedPrompt flow if a persona is active
     try {
       const result = await generateEnhancedPrompt({
         originalPrompt,
@@ -317,6 +336,7 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(template.prompt);
     setOriginalLlmType(template.llmType);
     setOriginalIsDeepResearch(template.isDeepResearch);
+    // Consider if selecting a template should clear the selected persona or not. For now, it persists.
     resetSecondaryStates();
     toast({
       title: "Template Loaded",
@@ -328,6 +348,7 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(item.originalPrompt);
     setOriginalLlmType(item.originalLlmType);
     setOriginalIsDeepResearch(item.originalIsDeepResearch);
+    // Note: Persona selection from history item is not implemented yet. Current persona selection persists.
     
     resetSecondaryStates(); 
     
@@ -363,14 +384,25 @@ export default function PromptRefinerPage() {
 
   const handleRefineFurther = (promptToRefine: string) => {
     setOriginalPrompt(promptToRefine);
-    // Preserve llmType and isDeepResearch when refining further
-    // setOriginalLlmType remains as is
-    // setOriginalIsDeepResearch remains as is
     resetSecondaryStates();
     toast({
       title: "Prompt Loaded for Re-analysis",
       description: "The enhanced prompt has been loaded into the editor for further refinement.",
     });
+  };
+
+  const handlePersonasChanged = (updatedPersonas: Persona[]) => {
+    setPersonas(updatedPersonas);
+    // If the currently selected persona was deleted, reset selection
+    if (selectedPersonaId && !updatedPersonas.find(p => p.id === selectedPersonaId)) {
+      setSelectedPersonaId(undefined);
+    }
+  };
+
+  const handleSelectPersona = (personaId?: string) => {
+    setSelectedPersonaId(personaId);
+    // Optionally, re-analyze if a prompt is already present when persona changes. For now, user needs to click Analyze.
+    // resetSecondaryStates(); // Or just reset analysisResult
   };
 
 
@@ -387,12 +419,21 @@ export default function PromptRefinerPage() {
             disabled={anyLoading}
           />
           <Separator />
+          <PersonaManager 
+            personas={personas}
+            onPersonasChange={handlePersonasChanged}
+            disabled={anyLoading}
+          />
+          <Separator />
           <PromptUploader 
             onAnalyze={handleAnalyzePrompt} 
             isLoading={isLoadingAnalysis}
             initialPrompt={originalPrompt}
             initialLlmType={originalLlmType}
             initialIsDeepResearch={originalIsDeepResearch}
+            personas={personas}
+            selectedPersonaId={selectedPersonaId}
+            onSelectPersona={handleSelectPersona}
           />
 
           {(analysisResult || isLoadingAnalysis || analysisError) && (
@@ -467,4 +508,3 @@ export default function PromptRefinerPage() {
     </div>
   );
 }
-

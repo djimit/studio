@@ -1,6 +1,6 @@
 
 // This is an AI-powered function that analyzes user-provided prompts and offers suggestions for improvement.
-// It takes a prompt, LLM type, and research depth as input and returns an analysis with tailored suggestions, a recommended LLM model, and a clarity score.
+// It takes a prompt, LLM type, research depth, and optional persona instructions as input and returns an analysis with tailored suggestions, a recommended LLM model, and various quality scores.
 // - analyzePrompt - Analyzes the prompt and provides improvement suggestions.
 // - AnalyzePromptInput - Input type for analyzePrompt.
 // - AnalyzePromptOutput - Output type for analyzePrompt.
@@ -14,6 +14,7 @@ const AnalyzePromptInputSchema = z.object({
   prompt: z.string().describe('The prompt to be analyzed.'),
   llmType: z.enum(['general', 'code', 'creative', 'image', 'research']).describe('The type of LLM the prompt is intended for (e.g., general text, code generation, creative writing, image generation, research).').optional(),
   isDeepResearch: z.boolean().describe('Whether the prompt is intended for deep research.').optional(),
+  personaInstructions: z.string().optional().describe('Specific instructions defining an AI persona. If provided, the analysis and suggestions should align with this persona.'),
 });
 export type AnalyzePromptInput = z.infer<typeof AnalyzePromptInputSchema>;
 
@@ -84,6 +85,14 @@ Consider the context provided:
 {{else}}
 - Deep Research: No
 {{/if}}
+{{#if personaInstructions}}
+
+Active AI Persona Instructions:
+---
+{{personaInstructions}}
+---
+(Your analysis, suggestions, and model recommendation should align with and consider these persona instructions.)
+{{/if}}
 
 Prompt: {{{prompt}}}
 
@@ -91,7 +100,7 @@ Analysis (General Evaluation):
 Provide your general analysis of the prompt here.
 
 Suggestions:
-Provide an array of specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type and research depth.
+Provide an array of specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type, research depth, and persona instructions.
 
 Advanced Prompt Metrics:
 
@@ -133,7 +142,7 @@ Advanced Prompt Metrics:
     Populate 'tokenCountEstimation' with a number. If you cannot reliably estimate, you may omit this field or provide 0 and briefly state why in the general analysis.
 
 Model Suggestion:
-Based on the prompt's content, the selected LLM Type (if any), and whether it's for deep research, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice.
+Based on the prompt's content, the selected LLM Type (if any), whether it's for deep research, and any active persona instructions, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice.
 - You MUST populate the 'suggestedModel' and 'modelSuggestionReasoning' fields in your JSON output.
 - If a specific model is a clear fit, suggest it and explain why.
 - If multiple models could work, pick the one you deem most versatile or generally applicable for the task and explain your choice.
@@ -178,4 +187,3 @@ const analyzePromptFlow = ai.defineFlow(
     return output!;
   }
 );
-
