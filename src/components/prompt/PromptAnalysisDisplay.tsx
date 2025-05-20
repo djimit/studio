@@ -5,8 +5,9 @@ import type { AnalyzePromptOutput } from '@/ai/flows/prompt-analysis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu, Eye } from 'lucide-react';
+import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu, Eye, Star, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress'; // Added for clarity score visualization
 
 interface PromptAnalysisDisplayProps {
   analysisResult: AnalyzePromptOutput | null;
@@ -36,6 +37,8 @@ export function PromptAnalysisDisplay({
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-6 w-1/2 mt-4" />
           <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-6 w-1/2 mt-4" />
+          <Skeleton className="h-8 w-full" /> {/* Skeleton for clarity score */}
         </CardContent>
       </Card>
     );
@@ -51,14 +54,16 @@ export function PromptAnalysisDisplay({
   }
 
   if (!analysisResult) {
-    return null; // Don't show anything if there's no result and not loading (e.g., initial state)
+    return null;
   }
+
+  const clarityScorePercentage = analysisResult.promptClarityScore ? (analysisResult.promptClarityScore / 10) * 100 : 0;
 
   return (
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6" /><span>Prompt Analysis</span></CardTitle>
-        <CardDescription>Here's what our AI thinks about your prompt and how it can be improved, including a model suggestion.</CardDescription>
+        <CardDescription>Here's what our AI thinks about your prompt, its clarity, how it can be improved, and a model suggestion.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
@@ -68,6 +73,19 @@ export function PromptAnalysisDisplay({
           </h3>
           <p className="text-card-foreground/90">{analysisResult.analysis}</p>
         </div>
+
+        {analysisResult.promptClarityScore !== undefined && analysisResult.promptClarityScore !== null && (
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2 mb-2 text-foreground">
+              <Activity className="h-5 w-5 text-primary" />
+              Prompt Clarity Score: {analysisResult.promptClarityScore}/10
+            </h3>
+            <Progress value={clarityScorePercentage} className="w-full h-3 mb-1" />
+            {analysisResult.clarityScoreReasoning && (
+              <p className="text-sm text-muted-foreground">{analysisResult.clarityScoreReasoning}</p>
+            )}
+          </div>
+        )}
         
         {analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
           <div>
@@ -112,3 +130,4 @@ export function PromptAnalysisDisplay({
     </Card>
   );
 }
+
