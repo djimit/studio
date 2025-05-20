@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import type { AnalyzePromptOutput, AnalyzePromptInput } from '@/ai/flows/prompt-analysis';
 import { analyzePrompt } from '@/ai/flows/prompt-analysis';
-import { generateEnhancedPrompt } from '@/ai/flows/enhanced-prompt-generation';
-import { applySingleSuggestion } from '@/ai/flows/apply-single-suggestion-flow';
+import { generateEnhancedPrompt, type EnhancedPromptGenerationInput } from '@/ai/flows/enhanced-prompt-generation';
+import { applySingleSuggestion, type ApplySingleSuggestionInput } from '@/ai/flows/apply-single-suggestion-flow';
 import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-suggestion-flow';
 import { explainSuggestion, type ExplainSuggestionInput, type ExplainSuggestionOutput } from '@/ai/flows/explain-suggestion-flow';
 import { getHistory, addHistoryItem, clearHistory as clearHistoryStorage, type HistoryItem } from '@/lib/history';
@@ -221,12 +221,17 @@ export default function PromptRefinerPage() {
     setSuggestionPreviewError(null);
     setPromptForPreviewComparison(null);
 
+    const activePersona = personas.find(p => p.id === selectedPersonaId);
+    const applyInput: ApplySingleSuggestionInput = {
+      originalPrompt: currentOriginalPrompt,
+      suggestionToApply: suggestion,
+    };
+    if (activePersona?.instructions) {
+      applyInput.personaInstructions = activePersona.instructions;
+    }
 
     try {
-      const result = await applySingleSuggestion({
-        originalPrompt: currentOriginalPrompt, 
-        suggestionToApply: suggestion,
-      });
+      const result = await applySingleSuggestion(applyInput);
       setSuggestionPreview(result);
       setPromptForPreviewComparison(currentOriginalPrompt); 
       toast({
@@ -263,6 +268,7 @@ export default function PromptRefinerPage() {
     setSuggestionExplanation(null);
     setExplanationError(null);
 
+    const activePersona = personas.find(p => p.id === selectedPersonaId);
     const input: ExplainSuggestionInput = {
       originalPrompt,
       suggestionToExplain: suggestion,
@@ -273,8 +279,10 @@ export default function PromptRefinerPage() {
     if (originalIsDeepResearch !== undefined) {
       input.isDeepResearch = originalIsDeepResearch;
     }
-    // TODO: In a future step, pass personaInstructions to explainSuggestion flow if a persona is active
-
+    if (activePersona?.instructions) {
+      input.personaInstructions = activePersona.instructions;
+    }
+    
     try {
       const result = await explainSuggestion(input);
       setSuggestionExplanation(result.explanation);
@@ -306,14 +314,19 @@ export default function PromptRefinerPage() {
     const activeSuggestions = analysisResult.suggestions.filter(
       (suggestion) => selectedSuggestionsForEnhancement[suggestion]
     );
+    
+    const activePersona = personas.find(p => p.id === selectedPersonaId);
+    const generationInput: EnhancedPromptGenerationInput = {
+      originalPrompt,
+      suggestions: activeSuggestions,
+      format: selectedFormat,
+    };
+    if (activePersona?.instructions) {
+      generationInput.personaInstructions = activePersona.instructions;
+    }
 
-    // TODO: In a future step, pass personaInstructions to generateEnhancedPrompt flow if a persona is active
     try {
-      const result = await generateEnhancedPrompt({
-        originalPrompt,
-        suggestions: activeSuggestions, 
-        format: selectedFormat,
-      });
+      const result = await generateEnhancedPrompt(generationInput);
       setEnhancedPrompt(result.enhancedPrompt);
       toast({
         title: "Enhanced Prompt Generated",

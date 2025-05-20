@@ -10,6 +10,7 @@ const EnhancedPromptGenerationInputSchema = z.object({
   originalPrompt: z.string().describe('The original prompt uploaded by the user.'),
   suggestions: z.array(z.string()).describe('A list of AI suggestions selected by the user to improve the prompt.'),
   format: z.enum(['markdown', 'json']).describe('The desired output format (markdown or json).'),
+  personaInstructions: z.string().optional().describe('Specific instructions defining an AI persona. If provided, the enhanced prompt should align with this persona.'),
 });
 export type EnhancedPromptGenerationInput = z.infer<
   typeof EnhancedPromptGenerationInputSchema
@@ -35,6 +36,13 @@ const enhancedPromptGenerationPrompt = ai.definePrompt({
   prompt: `You are an AI prompt enhancer.
 Take the original prompt and incorporate the following selected suggestions to create the best possible new prompt.
 If no specific suggestions are provided, refine the original prompt based on its general quality, clarity, and completeness.
+
+{{#if personaInstructions}}
+Active AI Persona Instructions (The enhanced prompt should align with and consider these instructions):
+---
+{{personaInstructions}}
+---
+{{/if}}
 
 Original Prompt:
 {{{originalPrompt}}}

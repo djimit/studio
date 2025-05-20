@@ -14,6 +14,7 @@ import {z} from 'genkit';
 const ApplySingleSuggestionInputSchema = z.object({
   originalPrompt: z.string().describe('The original prompt text.'),
   suggestionToApply: z.string().describe('The specific suggestion to apply to the original prompt.'),
+  personaInstructions: z.string().optional().describe('Specific instructions defining an AI persona. If provided, applying the suggestion should align with this persona.'),
 });
 export type ApplySingleSuggestionInput = z.infer<
   typeof ApplySingleSuggestionInputSchema
@@ -39,6 +40,13 @@ const applySuggestionPrompt = ai.definePrompt({
   prompt: `You are an AI assistant that helps refine prompts.
 Given the following original prompt and a specific suggestion, rewrite the original prompt to incorporate ONLY that one suggestion.
 Focus on subtly integrating the suggestion while preserving the core intent of the original prompt.
+
+{{#if personaInstructions}}
+Active AI Persona Instructions (Your application of the suggestion should align with and consider these instructions):
+---
+{{personaInstructions}}
+---
+{{/if}}
 
 Original Prompt:
 {{{originalPrompt}}}

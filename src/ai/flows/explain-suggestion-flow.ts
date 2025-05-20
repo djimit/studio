@@ -16,6 +16,7 @@ const ExplainSuggestionInputSchema = z.object({
   suggestionToExplain: z.string().describe('The specific suggestion to explain.'),
   llmType: z.enum(['general', 'code', 'creative', 'image', 'research']).optional().describe('The type of LLM the prompt is intended for.'),
   isDeepResearch: z.boolean().optional().describe('Whether the prompt is intended for deep research.'),
+  personaInstructions: z.string().optional().describe('Specific instructions defining an AI persona. If provided, the explanation should align with this persona.'),
 });
 export type ExplainSuggestionInput = z.infer<
   typeof ExplainSuggestionInputSchema
@@ -46,6 +47,13 @@ Consider the following context if provided:
 {{/if}}
 {{#if isDeepResearch}}
 - Deep Research context: The user intends this for deep research.
+{{/if}}
+{{#if personaInstructions}}
+
+Active AI Persona Instructions (Your explanation should align with and consider these instructions):
+---
+{{personaInstructions}}
+---
 {{/if}}
 
 Original Prompt:
