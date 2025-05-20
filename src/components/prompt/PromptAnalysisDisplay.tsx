@@ -4,16 +4,25 @@
 import type { AnalyzePromptOutput } from '@/ai/flows/prompt-analysis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu, Eye } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface PromptAnalysisDisplayProps {
   analysisResult: AnalyzePromptOutput | null;
   isLoading: boolean;
   error?: string | null;
+  onPreviewSuggestion: (suggestion: string) => void;
+  isPreviewingSuggestion: boolean;
 }
 
-export function PromptAnalysisDisplay({ analysisResult, isLoading, error }: PromptAnalysisDisplayProps) {
+export function PromptAnalysisDisplay({ 
+  analysisResult, 
+  isLoading, 
+  error,
+  onPreviewSuggestion,
+  isPreviewingSuggestion
+}: PromptAnalysisDisplayProps) {
   if (isLoading) {
     return (
       <Card className="shadow-lg">
@@ -66,11 +75,23 @@ export function PromptAnalysisDisplay({ analysisResult, isLoading, error }: Prom
               <ListChecks className="h-5 w-5 text-primary" />
               Improvement Suggestions
             </h3>
-            <ul className="list-disc list-inside space-y-2 pl-2 text-card-foreground/90">
+            <ul className="list-none space-y-3 pl-0">
               {analysisResult.suggestions.map((suggestion, index) => (
-                <li key={index} className="flex items-start">
-                  <ThumbsUp className="h-4 w-4 text-green-500 mr-2 mt-1 shrink-0" />
-                  <span>{suggestion}</span>
+                <li key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 border rounded-md bg-muted/20">
+                  <div className="flex items-start">
+                    <ThumbsUp className="h-4 w-4 text-green-500 mr-3 mt-1 shrink-0" />
+                    <span className="text-card-foreground/90">{suggestion}</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onPreviewSuggestion(suggestion)}
+                    disabled={isPreviewingSuggestion}
+                    className="self-start sm:self-center"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -91,4 +112,3 @@ export function PromptAnalysisDisplay({ analysisResult, isLoading, error }: Prom
     </Card>
   );
 }
-

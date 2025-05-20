@@ -5,10 +5,14 @@ import { useState } from 'react';
 import type { AnalyzePromptOutput, AnalyzePromptInput } from '@/ai/flows/prompt-analysis';
 import { analyzePrompt } from '@/ai/flows/prompt-analysis';
 import { generateEnhancedPrompt } from '@/ai/flows/enhanced-prompt-generation';
+import { applySingleSuggestion } from '@/ai/flows/apply-single-suggestion-flow';
+import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-suggestion-flow';
+
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PromptUploader } from '@/components/prompt/PromptUploader';
 import type { LlmType } from '@/components/prompt/PromptUploader';
 import { PromptAnalysisDisplay } from '@/components/prompt/PromptAnalysisDisplay';
+import { SuggestionPreviewDisplay } from '@/components/prompt/SuggestionPreviewDisplay';
 import { FormatSelector } from '@/components/prompt/FormatSelector';
 import { EnhancedPromptDisplay } from '@/components/prompt/EnhancedPromptDisplay';
 import { useToast } from '@/hooks/use-toast';
@@ -26,15 +30,22 @@ export default function PromptRefinerPage() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
+  const [isPreviewingSuggestion, setIsPreviewingSuggestion] = useState<boolean>(false);
+  const [suggestionPreview, setSuggestionPreview] = useState<ApplySingleSuggestionOutput | null>(null);
+  const [suggestionPreviewError, setSuggestionPreviewError] = useState<string | null>(null);
+
+
   const { toast } = useToast();
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
     setOriginalPrompt(prompt);
     setIsLoadingAnalysis(true);
-    setAnalysisResult(null); // Reset previous results
+    setAnalysisResult(null); 
     setEnhancedPrompt(null);
+    setSuggestionPreview(null);
     setAnalysisError(null);
     setGenerationError(null);
+    setSuggestionPreviewError(null);
 
     const analysisInput: AnalyzePromptInput = { prompt };
     if (llmType) {
@@ -65,17 +76,49 @@ export default function PromptRefinerPage() {
     }
   };
 
+  const handlePreviewSuggestion = async (suggestion: string) => {
+    if (!originalPrompt) return;
+    
+    setIsPreviewingSuggestion(true);
+    setSuggestionPreview(null);
+    setSuggestionPreviewError(null);
+
+    try {
+      const result = await applySingleSuggestion({
+        originalPrompt,
+        suggestionToApply: suggestion,
+      });
+      setSuggestionPreview(result);
+      toast({
+        title: "Suggestion Previewed",
+        description: "Successfully generated a preview for the suggestion.",
+      });
+    } catch (error) {
+      console.error("Error previewing suggestion:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during preview.";
+      setSuggestionPreviewError(errorMessage);
+      toast({
+        title: "Preview Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPreviewingSuggestion(false);
+    }
+  };
+
+
   const handleGenerateEnhancedPrompt = async () => {
     if (!originalPrompt || !analysisResult || !analysisResult.suggestions) return;
 
     setIsLoadingEnhancedPrompt(true);
-    setEnhancedPrompt(null); // Reset previous result
+    setEnhancedPrompt(null); 
     setGenerationError(null);
 
     try {
       const result = await generateEnhancedPrompt({
         originalPrompt,
-        suggestions: analysisResult.suggestions.join('\n- '), // Join suggestions into a single string
+        suggestions: analysisResult.suggestions.join('\n- '), 
         format: selectedFormat,
       });
       setEnhancedPrompt(result.enhancedPrompt);
@@ -109,8 +152,19 @@ export default function PromptRefinerPage() {
               analysisResult={analysisResult} 
               isLoading={isLoadingAnalysis}
               error={analysisError}
+              onPreviewSuggestion={handlePreviewSuggestion}
+              isPreviewingSuggestion={isPreviewingSuggestion}
             />
           )}
+
+          {(suggestionPreview || isPreviewingSuggestion || suggestionPreviewError) && (
+             <SuggestionPreviewDisplay
+                previewResult={suggestionPreview}
+                isLoading={isPreviewingSuggestion}
+                error={suggestionPreviewError}
+              />
+          )}
+
 
           {analysisResult && !analysisError && analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
             <>
@@ -118,7 +172,7 @@ export default function PromptRefinerPage() {
               <FormatSelector
                 selectedFormat={selectedFormat}
                 onFormatChange={setSelectedFormat}
-                disabled={isLoadingEnhancedPrompt}
+                disabled={isLoadingEnhancedPrompt || isPreviewingSuggestion}
               />
               <Separator />
               <EnhancedPromptDisplay
@@ -140,4 +194,3 @@ export default function PromptRefinerPage() {
     </div>
   );
 }
-
