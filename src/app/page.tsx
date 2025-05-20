@@ -8,6 +8,7 @@ import { generateEnhancedPrompt } from '@/ai/flows/enhanced-prompt-generation';
 import { applySingleSuggestion } from '@/ai/flows/apply-single-suggestion-flow';
 import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-suggestion-flow';
 import { explainSuggestion, type ExplainSuggestionInput, type ExplainSuggestionOutput } from '@/ai/flows/explain-suggestion-flow';
+import { getHistory, addHistoryItem, clearHistory as clearHistoryStorage, type HistoryItem } from '@/lib/history';
 
 
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -18,6 +19,7 @@ import { SuggestionPreviewDisplay } from '@/components/prompt/SuggestionPreviewD
 import { FormatSelector } from '@/components/prompt/FormatSelector';
 import { EnhancedPromptDisplay } from '@/components/prompt/EnhancedPromptDisplay';
 import { PromptTemplateLibrary, type PromptTemplate } from '@/components/prompt/PromptTemplateLibrary';
+import { PromptHistoryDisplay } from '@/components/prompt/PromptHistoryDisplay';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
@@ -80,25 +82,33 @@ export default function PromptRefinerPage() {
   const [explanationError, setExplanationError] = useState<string | null>(null);
   const [currentSuggestionForExplanation, setCurrentSuggestionForExplanation] = useState<string | null>(null);
 
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
   const { toast } = useToast();
 
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
+
+  const resetSecondaryStates = () => {
+    setEnhancedPrompt(null);
+    setSuggestionPreview(null);
+    setSuggestionPreviewError(null);
+    setSuggestionExplanation(null);
+    setCurrentSuggestionForExplanation(null);
+    setExplanationError(null);
+    setGenerationError(null);
+  }
+
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
-    // Set these based on the uploader's current state, not necessarily overriding with originalPrompt
     setOriginalPrompt(prompt);
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
 
     setIsLoadingAnalysis(true);
     setAnalysisResult(null); 
-    setEnhancedPrompt(null);
-    setSuggestionPreview(null);
     setAnalysisError(null);
-    setGenerationError(null);
-    setSuggestionPreviewError(null);
-    setSuggestionExplanation(null);
-    setCurrentSuggestionForExplanation(null);
-    setExplanationError(null);
+    resetSecondaryStates();
 
 
     const analysisInput: AnalyzePromptInput = { prompt };
@@ -112,6 +122,7 @@ export default function PromptRefinerPage() {
     try {
       const result = await analyzePrompt(analysisInput);
       setAnalysisResult(result);
+      setHistory(addHistoryItem({ originalPrompt: prompt, originalLlmType: llmType, originalIsDeepResearch: isDeepResearch, analysisResult: result }));
       toast({
         title: "Analysis Complete",
         description: "Prompt analysis finished successfully.",
@@ -238,29 +249,42 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(template.prompt);
     setOriginalLlmType(template.llmType);
     setOriginalIsDeepResearch(template.isDeepResearch);
-
-    // Resetting analysis and other states
     setAnalysisResult(null);
-    setEnhancedPrompt(null);
-    setSuggestionPreview(null);
     setAnalysisError(null);
-    setGenerationError(null);
-    setSuggestionPreviewError(null);
-    setSuggestionExplanation(null);
-    setCurrentSuggestionForExplanation(null);
-    setExplanationError(null);
-
+    resetSecondaryStates();
     toast({
       title: "Template Loaded",
       description: `"${template.title}" has been loaded into the editor.`,
     });
   };
 
+  const handleLoadHistoryItem = (item: HistoryItem) => {
+    setOriginalPrompt(item.originalPrompt);
+    setOriginalLlmType(item.originalLlmType);
+    setOriginalIsDeepResearch(item.originalIsDeepResearch);
+    setAnalysisResult(item.analysisResult);
+    setAnalysisError(null); // Clear any previous errors
+    resetSecondaryStates();
+    toast({
+      title: "History Item Loaded",
+      description: "Selected refinement has been loaded.",
+    });
+  };
+
+  const handleClearHistory = () => {
+    setHistory(clearHistoryStorage());
+    toast({
+      title: "History Cleared",
+      description: "All refinement history has been deleted.",
+    });
+  };
+
+  const anyLoading = isLoadingAnalysis || isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation;
 
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl"> {/* Increased max-width for template library */}
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-8">
           <PromptTemplateLibrary templates={promptTemplates} onSelectTemplate={handleSelectTemplate} />
           <Separator />
@@ -307,7 +331,7 @@ export default function PromptRefinerPage() {
               <FormatSelector
                 selectedFormat={selectedFormat}
                 onFormatChange={setSelectedFormat}
-                disabled={isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation}
+                disabled={anyLoading}
               />
               <Separator />
               <EnhancedPromptDisplay
@@ -321,6 +345,13 @@ export default function PromptRefinerPage() {
               />
             </>
           )}
+          <Separator />
+          <PromptHistoryDisplay
+            history={history}
+            onLoadHistoryItem={handleLoadHistoryItem}
+            onClearHistory={handleClearHistory}
+            isLoading={anyLoading}
+          />
         </div>
       </main>
       <footer className="py-6 text-center text-muted-foreground border-t">
