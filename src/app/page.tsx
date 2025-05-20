@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AnalyzePromptOutput, AnalyzePromptInput } from '@/ai/flows/prompt-analysis';
 import { analyzePrompt } from '@/ai/flows/prompt-analysis';
 import { generateEnhancedPrompt } from '@/ai/flows/enhanced-prompt-generation';
@@ -17,8 +17,44 @@ import { PromptAnalysisDisplay } from '@/components/prompt/PromptAnalysisDisplay
 import { SuggestionPreviewDisplay } from '@/components/prompt/SuggestionPreviewDisplay';
 import { FormatSelector } from '@/components/prompt/FormatSelector';
 import { EnhancedPromptDisplay } from '@/components/prompt/EnhancedPromptDisplay';
+import { PromptTemplateLibrary, type PromptTemplate } from '@/components/prompt/PromptTemplateLibrary';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+
+const promptTemplates: PromptTemplate[] = [
+  {
+    title: "Code Generation: Python Function",
+    description: "Generate a Python function based on a detailed description of its purpose, inputs, and outputs.",
+    llmType: "code",
+    prompt: "Write a Python function that takes [input parameters, e.g., 'a list of integers', 'a string'] and returns [expected output, e.g., 'the sum of the list', 'the string reversed']. The function should [specific requirements or constraints, e.g., 'handle empty lists gracefully', 'be case-insensitive', 'use a specific algorithm if necessary']."
+  },
+  {
+    title: "Creative Writing: Short Story Idea",
+    description: "Brainstorm a short story idea with a specific genre, character archetypes, and a central conflict.",
+    llmType: "creative",
+    prompt: "Generate a short story concept for the [genre, e.g., 'sci-fi mystery', 'fantasy romance'] genre. The story should feature a [main character archetype, e.g., 'cynical detective', 'naive hero'] who uncovers [a secret or conflict, e.g., 'a hidden conspiracy', 'a magical artifact']. The setting is [describe the setting, e.g., 'a futuristic dystopian city', 'an enchanted forest']. The desired tone is [mood/tone, e.g., 'dark and suspenseful', 'lighthearted and adventurous'], and it should explore the theme of [theme, e.g., 'the price of knowledge', 'the power of friendship']."
+  },
+  {
+    title: "General Question: Explain a Concept",
+    description: "Get a clear, concise, and easy-to-understand explanation of a complex concept, suitable for a beginner.",
+    llmType: "general",
+    prompt: "Explain the concept of [concept name, e.g., 'blockchain technology', 'general relativity', 'machine learning'] in simple, accessible terms. Imagine you are explaining it to someone with no prior background in the subject. Use an analogy or a real-world example to aid understanding. Avoid jargon where possible, or explain it clearly if essential."
+  },
+  {
+    title: "Image Generation: Fantasy Landscape",
+    description: "Describe a vivid scene for an AI image generator to create a fantasy landscape.",
+    llmType: "image",
+    prompt: "Generate an image of a breathtaking fantasy landscape. The scene should prominently feature [key elements, e.g., 'floating islands connected by ancient stone bridges', 'a colossal, bioluminescent tree at the heart of a mystical forest', 'a ruined castlehalf-submerged in a crystal-clear lake']. The artistic style should be [artistic style, e.g., 'highly detailed photorealism', 'ethereal watercolor', 'epic matte painting']. The lighting should be [lighting conditions, e.g., 'golden hour with long shadows', 'moonlit with an aurora borealis in the sky']. The dominant color palette should consist of [color palette, e.g., 'deep blues, purples, and silver', 'earthy greens and browns with vibrant red accents']."
+  },
+  {
+    title: "Deep Research: Historical Event Analysis",
+    description: "Formulate a comprehensive query for deep research on a significant historical event, seeking multifaceted analysis.",
+    llmType: "research",
+    isDeepResearch: true,
+    prompt: "Provide an in-depth analysis of the [historical event, e.g., 'Cuban Missile Crisis', 'Renaissance period in Florence']. Your analysis should cover: \n1. Key actors and their motivations. \n2. The socio-political context leading up to the event. \n3. The immediate and long-term consequences (political, economic, social, cultural). \n4. Different historical interpretations or historiographical debates surrounding the event. \n5. The event's significance in the broader sweep of history. \nPlease cite specific examples or evidence to support your points and, where appropriate, refer to major scholarly works or primary sources."
+  }
+];
+
 
 export default function PromptRefinerPage() {
   const [originalPrompt, setOriginalPrompt] = useState<string>('');
@@ -48,6 +84,7 @@ export default function PromptRefinerPage() {
   const { toast } = useToast();
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
+    // Set these based on the uploader's current state, not necessarily overriding with originalPrompt
     setOriginalPrompt(prompt);
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
@@ -197,12 +234,43 @@ export default function PromptRefinerPage() {
     }
   };
 
+  const handleSelectTemplate = (template: PromptTemplate) => {
+    setOriginalPrompt(template.prompt);
+    setOriginalLlmType(template.llmType);
+    setOriginalIsDeepResearch(template.isDeepResearch);
+
+    // Resetting analysis and other states
+    setAnalysisResult(null);
+    setEnhancedPrompt(null);
+    setSuggestionPreview(null);
+    setAnalysisError(null);
+    setGenerationError(null);
+    setSuggestionPreviewError(null);
+    setSuggestionExplanation(null);
+    setCurrentSuggestionForExplanation(null);
+    setExplanationError(null);
+
+    toast({
+      title: "Template Loaded",
+      description: `"${template.title}" has been loaded into the editor.`,
+    });
+  };
+
+
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-3xl">
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl"> {/* Increased max-width for template library */}
         <div className="space-y-8">
-          <PromptUploader onAnalyze={handleAnalyzePrompt} isLoading={isLoadingAnalysis} />
+          <PromptTemplateLibrary templates={promptTemplates} onSelectTemplate={handleSelectTemplate} />
+          <Separator />
+          <PromptUploader 
+            onAnalyze={handleAnalyzePrompt} 
+            isLoading={isLoadingAnalysis}
+            initialPrompt={originalPrompt}
+            initialLlmType={originalLlmType}
+            initialIsDeepResearch={originalIsDeepResearch}
+          />
 
           {(analysisResult || isLoadingAnalysis || analysisError) && (
             <PromptAnalysisDisplay 

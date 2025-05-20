@@ -1,7 +1,8 @@
+
 'use client';
 
-import type * as React from 'react';
-import { useState } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,12 +16,33 @@ export type LlmType = 'general' | 'code' | 'creative' | 'image' | 'research';
 interface PromptUploaderProps {
   onAnalyze: (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => void;
   isLoading: boolean;
+  initialPrompt?: string;
+  initialLlmType?: LlmType;
+  initialIsDeepResearch?: boolean;
 }
 
-export function PromptUploader({ onAnalyze, isLoading }: PromptUploaderProps) {
-  const [prompt, setPrompt] = useState('');
-  const [llmType, setLlmType] = useState<LlmType | undefined>(undefined);
-  const [isDeepResearch, setIsDeepResearch] = useState<boolean>(false);
+export function PromptUploader({ 
+  onAnalyze, 
+  isLoading,
+  initialPrompt = '',
+  initialLlmType,
+  initialIsDeepResearch = false,
+}: PromptUploaderProps) {
+  const [prompt, setPrompt] = useState(initialPrompt);
+  const [llmType, setLlmType] = useState<LlmType | undefined>(initialLlmType);
+  const [isDeepResearch, setIsDeepResearch] = useState<boolean>(initialIsDeepResearch);
+
+  useEffect(() => {
+    setPrompt(initialPrompt);
+  }, [initialPrompt]);
+
+  useEffect(() => {
+    setLlmType(initialLlmType);
+  }, [initialLlmType]);
+
+  useEffect(() => {
+    setIsDeepResearch(initialIsDeepResearch);
+  }, [initialIsDeepResearch]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,13 +59,13 @@ export function PromptUploader({ onAnalyze, isLoading }: PromptUploaderProps) {
           <span>Refine Your Prompt</span>
         </CardTitle>
         <CardDescription>
-          Enter your prompt below. Provide additional context for more tailored suggestions.
+          Enter your prompt below, or select a template to get started. Provide additional context for more tailored suggestions.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Textarea
-            placeholder="Enter your prompt here..."
+            placeholder="Enter your prompt here or select a template above..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={6}
@@ -52,16 +74,17 @@ export function PromptUploader({ onAnalyze, isLoading }: PromptUploaderProps) {
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="llmType" className="flex items-center gap-2">
+              <Label htmlFor="llmTypeSelect" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
                 LLM Type (Optional)
               </Label>
               <Select
-                value={llmType}
-                onValueChange={(value) => setLlmType(value as LlmType)}
+                value={llmType || ''} // Ensure value is not undefined for Select
+                onValueChange={(value) => setLlmType(value as LlmType || undefined)}
                 disabled={isLoading}
+                name="llmTypeSelect"
               >
-                <SelectTrigger id="llmType" className="w-full">
+                <SelectTrigger id="llmTypeSelect" className="w-full">
                   <SelectValue placeholder="Select LLM type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -73,15 +96,15 @@ export function PromptUploader({ onAnalyze, isLoading }: PromptUploaderProps) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2 md:pt-8">
+            <div className="space-y-2 md:pt-8"> {/* Adjusted padding for alignment */}
                 <div className="flex items-center space-x-2">
                     <Checkbox
-                        id="isDeepResearch"
+                        id="isDeepResearchCheckbox"
                         checked={isDeepResearch}
                         onCheckedChange={(checked) => setIsDeepResearch(checked as boolean)}
                         disabled={isLoading}
                     />
-                    <Label htmlFor="isDeepResearch" className="flex items-center gap-2 cursor-pointer">
+                    <Label htmlFor="isDeepResearchCheckbox" className="flex items-center gap-2 cursor-pointer">
                          <SearchCheck className="h-4 w-4" />
                         Is this for deep research?
                     </Label>
