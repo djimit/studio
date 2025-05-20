@@ -54,6 +54,31 @@ const promptTemplates: PromptTemplate[] = [
     llmType: "research",
     isDeepResearch: true,
     prompt: "Provide an in-depth analysis of the [historical event, e.g., 'Cuban Missile Crisis', 'Renaissance period in Florence']. Your analysis should cover: \n1. Key actors and their motivations. \n2. The socio-political context leading up to the event. \n3. The immediate and long-term consequences (political, economic, social, cultural). \n4. Different historical interpretations or historiographical debates surrounding the event. \n5. The event's significance in the broader sweep of history. \nPlease cite specific examples or evidence to support your points and, where appropriate, refer to major scholarly works or primary sources."
+  },
+  {
+    title: "Marketing: Ad Copy Brainstorm",
+    description: "Generate several ad copy options for a new product targeting a specific audience.",
+    llmType: "creative",
+    prompt: "Brainstorm 3-5 variations of ad copy for a new [product type, e.g., 'eco-friendly water bottle', 'AI-powered scheduling app']. The target audience is [describe target audience, e.g., 'environmentally conscious millennials', 'busy professionals']. The key selling points are [list 2-3 key benefits, e.g., 'reduces plastic waste, keeps water cold for 24 hours', 'saves time, integrates with all calendars']. The tone should be [desired tone, e.g., 'playful and engaging', 'professional and efficient']. Include a call to action."
+  },
+  {
+    title: "Technical: API Endpoint Design",
+    description: "Outline the design for a REST API endpoint, including request/response structure.",
+    llmType: "code",
+    prompt: "Design a REST API endpoint for [specific action, e.g., 'creating a new user profile', 'fetching product details by ID']. Specify:\n1. HTTP Method (e.g., POST, GET)\n2. Endpoint URL (e.g., /users, /products/{id})\n3. Request Body (JSON structure, if applicable, including field names and example data types)\n4. Success Response (Status code, JSON structure, including field names and example data types)\n5. Potential Error Responses (Status codes and example error messages for common failure scenarios like 'not found' or 'invalid input')."
+  },
+  {
+    title: "Image Generation: Abstract Concept",
+    description: "Visualize an abstract concept or emotion as an image.",
+    llmType: "image",
+    prompt: "Generate an image that visually represents the concept of '[abstract concept/emotion, e.g., 'serenity', 'the flow of time', 'digital chaos']'. The artistic style should be [artistic style, e.g., 'surrealism', 'minimalist vector art', 'impressionistic oil painting']. Key visual elements to consider are [suggest elements, e.g., 'soft, diffused light and calm water for serenity', 'intertwining clock hands and flowing sand for flow of time', 'glitching pixels and fragmented data streams for digital chaos']. The color palette should evoke [mood/feeling, e.g., 'calm blues and greens', 'dynamic oranges and reds', 'monochromatic with stark contrasts']."
+  },
+  {
+    title: "Research: Scientific Literature Review Query",
+    description: "Formulate a detailed query for a preliminary literature review on a scientific topic.",
+    llmType: "research",
+    isDeepResearch: true,
+    prompt: "Generate a search query strategy and key terms for a preliminary literature review on the topic: '[Specific scientific topic, e.g., 'the impact of microplastics on marine ecosystems', 'CRISPR-Cas9 applications in genetic disease treatment']'. \nInclude:\n1. A concise statement of the research question or area of interest.\n2. A list of primary keywords and their synonyms/related terms.\n3. Suggested boolean operators (AND, OR, NOT) to combine terms for effective searching.\n4. Potential databases or academic search engines relevant to this field (e.g., PubMed, Scopus, Web of Science).\n5. Any exclusion criteria (e.g., articles published before a certain year, non-peer-reviewed sources)."
   }
 ];
 
@@ -203,6 +228,9 @@ export default function PromptRefinerPage() {
 
   const handleApplyPreviewToEditor = (previewText: string) => {
     setOriginalPrompt(previewText);
+    // Preserve llmType and isDeepResearch when applying preview
+    // setOriginalLlmType remains as is
+    // setOriginalIsDeepResearch remains as is
     resetSecondaryStates(); 
     toast({
       title: "Preview Applied",
@@ -335,6 +363,9 @@ export default function PromptRefinerPage() {
 
   const handleRefineFurther = (promptToRefine: string) => {
     setOriginalPrompt(promptToRefine);
+    // Preserve llmType and isDeepResearch when refining further
+    // setOriginalLlmType remains as is
+    // setOriginalIsDeepResearch remains as is
     resetSecondaryStates();
     toast({
       title: "Prompt Loaded for Re-analysis",
