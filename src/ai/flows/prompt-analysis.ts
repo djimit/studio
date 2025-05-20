@@ -20,8 +20,8 @@ export type AnalyzePromptInput = z.infer<typeof AnalyzePromptInputSchema>;
 const AnalyzePromptOutputSchema = z.object({
   analysis: z.string().describe('The AI analysis of the prompt.'),
   suggestions: z.array(z.string()).describe('Suggestions for improving the prompt.'),
-  suggestedModel: z.string().optional().describe('The suggested LLM model from the provided list that would be best for this prompt.'),
-  modelSuggestionReasoning: z.string().optional().describe('The reasoning behind suggesting the specific LLM model.'),
+  suggestedModel: z.string().optional().describe('The suggested LLM model from the provided list that would be best for this prompt. If no specific recommendation, state why.'),
+  modelSuggestionReasoning: z.string().optional().describe('The reasoning behind suggesting the specific LLM model, or explanation if no specific model is recommended.'),
 });
 export type AnalyzePromptOutput = z.infer<typeof AnalyzePromptOutputSchema>;
 
@@ -74,13 +74,18 @@ Suggestions:
 Provide an array of specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type and research depth.
 
 Model Suggestion:
-Based on the prompt's content, the selected LLM Type (if any), and whether it's for deep research, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice. If no specific model from the list clearly stands out or if the prompt is too generic, you can omit the 'suggestedModel' and 'modelSuggestionReasoning' fields in your output.
+Based on the prompt's content, the selected LLM Type (if any), and whether it's for deep research, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice.
+- You MUST populate the 'suggestedModel' and 'modelSuggestionReasoning' fields in your JSON output.
+- If a specific model is a clear fit, suggest it and explain why.
+- If multiple models could work, pick the one you deem most versatile or generally applicable for the task and explain your choice.
+- If the prompt is too vague to make a specific recommendation, set 'suggestedModel' to a message like "No specific model recommendation due to prompt vagueness" and for 'modelSuggestionReasoning' explain briefly why a specific recommendation cannot be made.
+Do not leave 'suggestedModel' or 'modelSuggestionReasoning' empty or undefined in your JSON output.
 
 Available Models:
 ${availableModels.map(m => `- ${m}`).join('\n')}
 
 Output Format:
-Ensure your output is a JSON object adhering to the specified output schema, including 'analysis', 'suggestions', and optionally 'suggestedModel' and 'modelSuggestionReasoning'.
+Ensure your output is a JSON object adhering to the specified output schema, including 'analysis', 'suggestions', 'suggestedModel', and 'modelSuggestionReasoning'.
 `,
 });
 
@@ -103,4 +108,3 @@ const analyzePromptFlow = ai.defineFlow(
     return output!;
   }
 );
-
