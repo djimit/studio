@@ -92,7 +92,7 @@ export default function PromptRefinerPage() {
   }, []);
 
   const resetSecondaryStates = () => {
-    setAnalysisResult(null); // Clear analysis as original prompt has changed or is being reset
+    setAnalysisResult(null); 
     setEnhancedPrompt(null);
     setSuggestionPreview(null);
     setSuggestionPreviewError(null);
@@ -101,17 +101,15 @@ export default function PromptRefinerPage() {
     setExplanationError(null);
     setGenerationError(null);
     setSelectedSuggestionsForEnhancement({});
-    setAnalysisError(null); // Also clear analysis error
+    setAnalysisError(null); 
   }
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
-    setOriginalPrompt(prompt);
+    setOriginalPrompt(prompt); // Set original prompt immediately for consistency
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
 
     setIsLoadingAnalysis(true);
-    setAnalysisResult(null); 
-    setAnalysisError(null);
     resetSecondaryStates(); // Reset dependent states *before* new analysis
 
 
@@ -183,9 +181,9 @@ export default function PromptRefinerPage() {
 
   const handleApplyPreviewToEditor = (previewText: string) => {
     setOriginalPrompt(previewText);
-    // Optionally, we could decide if applying a preview should also reset llmType or isDeepResearch
-    // For now, let's keep them as they were for the prompt that generated the preview.
-    resetSecondaryStates();
+    // LLM type and deep research status are preserved from the original prompt
+    // that led to this preview.
+    resetSecondaryStates(); 
     toast({
       title: "Preview Applied",
       description: "The previewed prompt has been loaded into the editor.",
@@ -284,42 +282,10 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(item.originalPrompt);
     setOriginalLlmType(item.originalLlmType);
     setOriginalIsDeepResearch(item.originalIsDeepResearch);
-    setAnalysisResult(item.analysisResult); // Load analysis
-    resetSecondaryStates(); // Call this *after* setting analysisResult if you want to keep it
-                            // Or adjust resetSecondaryStates to not clear analysisResult if needed for this flow
-     if (item.analysisResult && item.analysisResult.suggestions) {
-        const initialSelected: Record<string, boolean> = {};
-        item.analysisResult.suggestions.forEach(s => initialSelected[s] = true);
-        setSelectedSuggestionsForEnhancement(initialSelected);
-      } else {
-        setSelectedSuggestionsForEnhancement({});
-      }
-    // If resetSecondaryStates clears analysisResult, then re-set it here.
-    // Let's adjust resetSecondaryStates to be more granular or call it before setting analysisResult.
-    // For now, assuming analysisResult set before reset is fine, and if it gets cleared, it's re-set by analysis loading.
-    // Best practice: Call reset, then set all new states.
-    // So, let's slightly re-order and ensure reset is comprehensive:
-    // setOriginalPrompt(item.originalPrompt);
-    // setOriginalLlmType(item.originalLlmType);
-    // setOriginalIsDeepResearch(item.originalIsDeepResearch);
-    // resetSecondaryStates(); // Clears everything else
-    // setAnalysisResult(item.analysisResult); // Now set analysis
-
-    // Corrected logic for handleLoadHistoryItem:
-    setOriginalPrompt(item.originalPrompt);
-    setOriginalLlmType(item.originalLlmType);
-    setOriginalIsDeepResearch(item.originalIsDeepResearch);
-    // Reset all other states first
-    setEnhancedPrompt(null);
-    setSuggestionPreview(null);
-    setSuggestionPreviewError(null);
-    setSuggestionExplanation(null);
-    setCurrentSuggestionForExplanation(null);
-    setExplanationError(null);
-    setGenerationError(null);
-    setAnalysisError(null); 
-    // Then set the loaded analysis and suggestions
-    setAnalysisResult(item.analysisResult);
+    
+    resetSecondaryStates(); // Clears everything else first
+    
+    setAnalysisResult(item.analysisResult); // Now set analysis
     if (item.analysisResult && item.analysisResult.suggestions) {
       const initialSelected: Record<string, boolean> = {};
       item.analysisResult.suggestions.forEach(s => initialSelected[s] = true);
@@ -348,6 +314,19 @@ export default function PromptRefinerPage() {
       [suggestion]: !prev[suggestion],
     }));
   };
+
+  const handleRefineFurther = (promptToRefine: string) => {
+    setOriginalPrompt(promptToRefine);
+    // Preserve existing LLM type and deep research status from original prompt that led to this enhanced prompt
+    // setOriginalLlmType(originalLlmType); 
+    // setOriginalIsDeepResearch(originalIsDeepResearch);
+    resetSecondaryStates();
+    toast({
+      title: "Prompt Loaded for Re-analysis",
+      description: "The enhanced prompt has been loaded into the editor for further refinement.",
+    });
+  };
+
 
   const anyLoading = isLoadingAnalysis || isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation;
 
@@ -416,6 +395,7 @@ export default function PromptRefinerPage() {
                 onGenerate={handleGenerateEnhancedPrompt}
                 showGenerateButton={!!analysisResult && !analysisError}
                 canGenerate={Object.values(selectedSuggestionsForEnhancement).some(Boolean) || (analysisResult?.suggestions?.length === 0)}
+                onRefineThisPrompt={handleRefineFurther}
               />
             </>
           )}
@@ -434,3 +414,4 @@ export default function PromptRefinerPage() {
     </div>
   );
 }
+
