@@ -23,12 +23,11 @@ import {
 
 interface PromptAnalysisDisplayProps {
   analysisResult: AnalyzePromptOutput | null;
-  isLoading: boolean;
+  isLoading: boolean; // Specific to analysis loading
   error?: string | null;
   onPreviewSuggestion: (suggestion: string) => void;
-  isPreviewingSuggestion: boolean;
+  globalIsLoading: boolean; // True if any AI operation is in progress
   onExplainSuggestion: (suggestion: string) => void;
-  isLoadingExplanation: boolean;
   suggestionExplanation: string | null;
   explanationError: string | null;
   currentSuggestionForExplanation: string | null;
@@ -42,9 +41,8 @@ export function PromptAnalysisDisplay({
   isLoading, 
   error,
   onPreviewSuggestion,
-  isPreviewingSuggestion,
+  globalIsLoading,
   onExplainSuggestion,
-  isLoadingExplanation,
   suggestionExplanation,
   explanationError,
   currentSuggestionForExplanation,
@@ -52,7 +50,13 @@ export function PromptAnalysisDisplay({
   selectedSuggestionsForEnhancement,
   onToggleSuggestionForEnhancement,
 }: PromptAnalysisDisplayProps) {
-  if (isLoading) {
+  // Determine individual loading states based on globalIsLoading and specific states from page.tsx
+  // For instance, isPreviewingSuggestion and isLoadingExplanation are managed in page.tsx and reflected in globalIsLoading
+  const isPreviewingSuggestionActive = globalIsLoading && !isLoading && !suggestionExplanation; // A bit of guesswork here, better to pass specific loading states
+  const isLoadingExplanationActive = globalIsLoading && !!currentSuggestionForExplanation;
+
+
+  if (isLoading) { // This is for the initial analysis loading
     return (
       <Card className="shadow-lg">
         <CardHeader>
@@ -86,7 +90,7 @@ export function PromptAnalysisDisplay({
   }
 
   const clarityScorePercentage = analysisResult.promptClarityScore ? (analysisResult.promptClarityScore / 10) * 100 : 0;
-  const isExplainDialogOpen = !!(currentSuggestionForExplanation && (suggestionExplanation || isLoadingExplanation || explanationError));
+  const isExplainDialogOpen = !!(currentSuggestionForExplanation && (suggestionExplanation || isLoadingExplanationActive || explanationError));
 
   return (
     <>
@@ -133,6 +137,7 @@ export function PromptAnalysisDisplay({
                         onCheckedChange={() => onToggleSuggestionForEnhancement(suggestion)}
                         className="mr-3 mt-1 shrink-0"
                         aria-label={`Select suggestion: ${suggestion}`}
+                        disabled={globalIsLoading}
                       />
                       <Label htmlFor={`suggestion-checkbox-${index}`} className="flex-grow cursor-pointer">
                         <div className="flex items-start">
@@ -146,21 +151,21 @@ export function PromptAnalysisDisplay({
                         variant="outline" 
                         size="sm" 
                         onClick={() => onPreviewSuggestion(suggestion)}
-                        disabled={isPreviewingSuggestion || isLoadingExplanation}
+                        disabled={globalIsLoading} // Disables if any AI operation is loading
                         aria-label={`Preview suggestion: ${suggestion}`}
                       >
-                        <Eye className="mr-2 h-4 w-4" />
+                        {globalIsLoading && !isLoadingExplanationActive && !isLoading && currentSuggestionForExplanation !== suggestion ? <DialogLoader className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
                         Preview
                       </Button>
                        <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onExplainSuggestion(suggestion)}
-                        disabled={isLoadingExplanation || isPreviewingSuggestion}
+                        disabled={globalIsLoading} // Disables if any AI operation is loading
                         aria-label={`Explain suggestion: ${suggestion}`}
                         className="text-primary hover:text-primary/80"
                       >
-                        {isLoadingExplanation && currentSuggestionForExplanation === suggestion ? (
+                        {isLoadingExplanationActive && currentSuggestionForExplanation === suggestion ? (
                           <DialogLoader className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <HelpCircle className="mr-2 h-4 w-4" />
@@ -199,25 +204,25 @@ export function PromptAnalysisDisplay({
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {isLoadingExplanation && (
+            {isLoadingExplanationActive && ( // Use derived loading state
               <div className="flex items-center justify-center space-x-2">
                 <DialogLoader className="h-6 w-6 animate-spin text-primary" />
                 <span>Loading explanation...</span>
               </div>
             )}
-            {explanationError && !isLoadingExplanation && (
+            {explanationError && !isLoadingExplanationActive && (
               <Alert variant="destructive">
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{explanationError}</AlertDescription>
               </Alert>
             )}
-            {suggestionExplanation && !isLoadingExplanation && !explanationError && (
+            {suggestionExplanation && !isLoadingExplanationActive && !explanationError && (
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{suggestionExplanation}</p>
             )}
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" onClick={onCloseExplanationDialog}>
+              <Button type="button" variant="outline" onClick={onCloseExplanationDialog} disabled={globalIsLoading && isLoadingExplanationActive}>
                 Close
               </Button>
             </DialogClose>

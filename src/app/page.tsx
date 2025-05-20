@@ -105,12 +105,12 @@ export default function PromptRefinerPage() {
   }
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
-    setOriginalPrompt(prompt); // Set original prompt immediately for consistency
+    setOriginalPrompt(prompt); 
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
 
     setIsLoadingAnalysis(true);
-    resetSecondaryStates(); // Reset dependent states *before* new analysis
+    resetSecondaryStates(); 
 
 
     const analysisInput: AnalyzePromptInput = { prompt };
@@ -126,7 +126,7 @@ export default function PromptRefinerPage() {
       setAnalysisResult(result);
       if (result && result.suggestions) {
         const initialSelectedSuggestions: Record<string, boolean> = {};
-        result.suggestions.forEach(s => initialSelectedSuggestions[s] = true); // Default to all selected
+        result.suggestions.forEach(s => initialSelectedSuggestions[s] = true); 
         setSelectedSuggestionsForEnhancement(initialSelectedSuggestions);
       }
       setHistory(addHistoryItem({ originalPrompt: prompt, originalLlmType: llmType, originalIsDeepResearch: isDeepResearch, analysisResult: result }));
@@ -181,8 +181,6 @@ export default function PromptRefinerPage() {
 
   const handleApplyPreviewToEditor = (previewText: string) => {
     setOriginalPrompt(previewText);
-    // LLM type and deep research status are preserved from the original prompt
-    // that led to this preview.
     resetSecondaryStates(); 
     toast({
       title: "Preview Applied",
@@ -283,9 +281,9 @@ export default function PromptRefinerPage() {
     setOriginalLlmType(item.originalLlmType);
     setOriginalIsDeepResearch(item.originalIsDeepResearch);
     
-    resetSecondaryStates(); // Clears everything else first
+    resetSecondaryStates(); 
     
-    setAnalysisResult(item.analysisResult); // Now set analysis
+    setAnalysisResult(item.analysisResult); 
     if (item.analysisResult && item.analysisResult.suggestions) {
       const initialSelected: Record<string, boolean> = {};
       item.analysisResult.suggestions.forEach(s => initialSelected[s] = true);
@@ -317,9 +315,6 @@ export default function PromptRefinerPage() {
 
   const handleRefineFurther = (promptToRefine: string) => {
     setOriginalPrompt(promptToRefine);
-    // Preserve existing LLM type and deep research status from original prompt that led to this enhanced prompt
-    // setOriginalLlmType(originalLlmType); 
-    // setOriginalIsDeepResearch(originalIsDeepResearch);
     resetSecondaryStates();
     toast({
       title: "Prompt Loaded for Re-analysis",
@@ -335,11 +330,15 @@ export default function PromptRefinerPage() {
       <AppHeader />
       <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-8">
-          <PromptTemplateLibrary templates={promptTemplates} onSelectTemplate={handleSelectTemplate} />
+          <PromptTemplateLibrary 
+            templates={promptTemplates} 
+            onSelectTemplate={handleSelectTemplate} 
+            disabled={anyLoading}
+          />
           <Separator />
           <PromptUploader 
             onAnalyze={handleAnalyzePrompt} 
-            isLoading={isLoadingAnalysis}
+            isLoading={isLoadingAnalysis} // This is fine, PromptUploader handles its own loading state for its button
             initialPrompt={originalPrompt}
             initialLlmType={originalLlmType}
             initialIsDeepResearch={originalIsDeepResearch}
@@ -351,9 +350,8 @@ export default function PromptRefinerPage() {
               isLoading={isLoadingAnalysis}
               error={analysisError}
               onPreviewSuggestion={handlePreviewSuggestion}
-              isPreviewingSuggestion={isPreviewingSuggestion}
+              globalIsLoading={anyLoading} // Pass global loading state
               onExplainSuggestion={handleExplainSuggestion}
-              isLoadingExplanation={isLoadingExplanation}
               suggestionExplanation={suggestionExplanation}
               explanationError={explanationError}
               currentSuggestionForExplanation={currentSuggestionForExplanation}
@@ -373,6 +371,7 @@ export default function PromptRefinerPage() {
                 isLoading={isPreviewingSuggestion}
                 error={suggestionPreviewError}
                 onApplyPreview={handleApplyPreviewToEditor}
+                disabled={anyLoading}
               />
           )}
 
@@ -388,7 +387,8 @@ export default function PromptRefinerPage() {
               <Separator />
               <EnhancedPromptDisplay
                 enhancedPrompt={enhancedPrompt}
-                isLoading={isLoadingEnhancedPrompt}
+                isLoading={isLoadingEnhancedPrompt} // Its own loading state
+                globalIsLoading={anyLoading} // Global loading state
                 selectedFormat={selectedFormat}
                 fileName="refined_prompt"
                 error={generationError}
@@ -404,7 +404,7 @@ export default function PromptRefinerPage() {
             history={history}
             onLoadHistoryItem={handleLoadHistoryItem}
             onClearHistory={handleClearHistory}
-            isLoading={anyLoading}
+            isLoading={anyLoading} // This correctly disables its buttons
           />
         </div>
       </main>

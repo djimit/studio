@@ -11,26 +11,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface EnhancedPromptDisplayProps {
   enhancedPrompt: string | null;
-  isLoading: boolean;
+  isLoading: boolean; // Specific to generating enhanced prompt
+  globalIsLoading: boolean; // True if any AI operation is in progress
   selectedFormat: 'markdown' | 'json';
   fileName?: string;
   error?: string | null;
   onGenerate: () => void;
   showGenerateButton: boolean;
   canGenerate?: boolean;
-  onRefineThisPrompt?: (promptText: string) => void; // New prop
+  onRefineThisPrompt?: (promptText: string) => void;
 }
 
 export function EnhancedPromptDisplay({
   enhancedPrompt,
   isLoading,
+  globalIsLoading,
   selectedFormat,
   fileName = 'enhanced_prompt',
   error,
   onGenerate,
   showGenerateButton,
   canGenerate = true,
-  onRefineThisPrompt, // New prop
+  onRefineThisPrompt,
 }: EnhancedPromptDisplayProps) {
   
   const handleDownload = () => {
@@ -46,7 +48,8 @@ export function EnhancedPromptDisplay({
   };
 
   const renderContent = () => {
-    if (isLoading && !enhancedPrompt && showGenerateButton) { // Loading after clicking generate
+    // This condition is for when THIS component's action is loading
+    if (isLoading && !enhancedPrompt && showGenerateButton) { 
       return (
         <div className="space-y-2">
           <Skeleton className="h-8 w-3/4" />
@@ -72,14 +75,15 @@ export function EnhancedPromptDisplay({
             readOnly
             rows={10}
             className="text-base bg-muted/30 font-mono"
+            disabled={globalIsLoading} // Disable textarea if anything is loading globally
           />
           <div className="flex flex-wrap gap-2 mt-4">
-            <Button onClick={handleDownload} className="sm:w-auto">
+            <Button onClick={handleDownload} className="sm:w-auto" disabled={globalIsLoading}>
               <Download className="mr-2 h-4 w-4" />
               Download {selectedFormat === 'markdown' ? 'Markdown' : 'JSON'}
             </Button>
             {onRefineThisPrompt && (
-              <Button onClick={handleRefine} variant="outline" className="sm:w-auto">
+              <Button onClick={handleRefine} variant="outline" className="sm:w-auto" disabled={globalIsLoading}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refine This Enhanced Prompt
               </Button>
@@ -96,7 +100,7 @@ export function EnhancedPromptDisplay({
         return <p className="text-muted-foreground">Click "Generate Enhanced Prompt" to see the result.</p>;
     }
 
-    return null; // Initial state, before analysis is done
+    return null; 
   };
 
   return (
@@ -115,10 +119,10 @@ export function EnhancedPromptDisplay({
         {showGenerateButton && (
           <Button 
             onClick={onGenerate} 
-            disabled={isLoading || !canGenerate} 
+            disabled={globalIsLoading || isLoading || !canGenerate} // Disabled if its own action is loading, any global action is loading, or cannot generate
             className="w-full sm:w-auto mb-6"
           >
-            {isLoading ? (
+            {isLoading ? ( // Specific loading state for this button's action
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Generating...

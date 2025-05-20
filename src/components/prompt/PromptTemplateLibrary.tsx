@@ -19,6 +19,7 @@ export interface PromptTemplate {
 interface PromptTemplateLibraryProps {
   templates: PromptTemplate[];
   onSelectTemplate: (template: PromptTemplate) => void;
+  disabled?: boolean;
 }
 
 const llmTypeIcons: Record<LlmType, React.ReactNode> = {
@@ -38,7 +39,7 @@ const llmTypeColors: Record<LlmType, string> = {
 };
 
 
-export function PromptTemplateLibrary({ templates, onSelectTemplate }: PromptTemplateLibraryProps) {
+export function PromptTemplateLibrary({ templates, onSelectTemplate, disabled = false }: PromptTemplateLibraryProps) {
   if (!templates || templates.length === 0) {
     return null;
   }
@@ -83,7 +84,12 @@ export function PromptTemplateLibrary({ templates, onSelectTemplate }: PromptTem
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={() => onSelectTemplate(template)} className="w-full" variant="outline">
+                  <Button 
+                    onClick={() => onSelectTemplate(template)} 
+                    className="w-full" 
+                    variant="outline"
+                    disabled={disabled}
+                  >
                     Use this Template
                   </Button>
                 </CardFooter>

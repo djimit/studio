@@ -11,14 +11,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface SuggestionPreviewDisplayProps {
   previewResult: ApplySingleSuggestionOutput | null;
-  isLoading: boolean;
+  isLoading: boolean; // Specific to preview generation
   error?: string | null;
   onApplyPreview?: (previewText: string) => void;
+  disabled?: boolean; // Global loading state from page
 }
 
-export function SuggestionPreviewDisplay({ previewResult, isLoading, error, onApplyPreview }: SuggestionPreviewDisplayProps) {
+export function SuggestionPreviewDisplay({ 
+  previewResult, 
+  isLoading, 
+  error, 
+  onApplyPreview,
+  disabled = false 
+}: SuggestionPreviewDisplayProps) {
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading) { // This is for when THIS component's action is loading
       return (
         <div className="space-y-2">
           <Skeleton className="h-8 w-3/4" />
@@ -45,12 +52,14 @@ export function SuggestionPreviewDisplay({ previewResult, isLoading, error, onAp
             rows={8}
             className="text-base bg-muted/30 font-mono"
             aria-label="Preview of prompt with suggestion applied"
+            disabled={disabled || isLoading} // Also disable if its own content is loading
           />
           {onApplyPreview && (
             <Button 
               onClick={() => onApplyPreview(previewResult.previewPrompt)} 
               className="mt-4 w-full sm:w-auto"
               variant="outline"
+              disabled={disabled || isLoading} // Disable if global loading or its own content is loading
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Apply to Editor
@@ -75,7 +84,7 @@ export function SuggestionPreviewDisplay({ previewResult, isLoading, error, onAp
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading && (
+        {isLoading && ( // Shows a spinner if THIS component's action is loading
           <div className="flex items-center justify-center p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Generating Preview...</span>
