@@ -26,6 +26,8 @@ interface PromptUploaderProps {
   onSelectPersona: (personaId?: string) => void;
 }
 
+const NONE_PERSONA_VALUE = "__none__";
+
 export function PromptUploader({ 
   onAnalyze, 
   isLoading,
@@ -150,8 +152,8 @@ export function PromptUploader({
                     AI Persona (Optional)
                 </Label>
                 <Select
-                    value={selectedPersonaId || ''}
-                    onValueChange={(value) => onSelectPersona(value || undefined)}
+                    value={selectedPersonaId || NONE_PERSONA_VALUE}
+                    onValueChange={(value) => onSelectPersona(value === NONE_PERSONA_VALUE ? undefined : value)}
                     disabled={isLoading || personas.length === 0}
                     name="personaSelect"
                 >
@@ -159,7 +161,7 @@ export function PromptUploader({
                         <SelectValue placeholder={personas.length === 0 ? "No personas available" : "Select a persona"} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value={NONE_PERSONA_VALUE}>None</SelectItem>
                         {personas.map(persona => (
                             <SelectItem key={persona.id} value={persona.id}>
                                 {persona.name}
