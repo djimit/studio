@@ -76,6 +76,8 @@ export default function PromptRefinerPage() {
   const [isPreviewingSuggestion, setIsPreviewingSuggestion] = useState<boolean>(false);
   const [suggestionPreview, setSuggestionPreview] = useState<ApplySingleSuggestionOutput | null>(null);
   const [suggestionPreviewError, setSuggestionPreviewError] = useState<string | null>(null);
+  const [promptForPreviewComparison, setPromptForPreviewComparison] = useState<string | null>(null);
+
 
   const [suggestionExplanation, setSuggestionExplanation] = useState<string | null>(null);
   const [isLoadingExplanation, setIsLoadingExplanation] = useState<boolean>(false);
@@ -96,6 +98,7 @@ export default function PromptRefinerPage() {
     setEnhancedPrompt(null);
     setSuggestionPreview(null);
     setSuggestionPreviewError(null);
+    setPromptForPreviewComparison(null);
     setSuggestionExplanation(null);
     setCurrentSuggestionForExplanation(null);
     setExplanationError(null);
@@ -151,16 +154,20 @@ export default function PromptRefinerPage() {
   const handlePreviewSuggestion = async (suggestion: string) => {
     if (!originalPrompt) return;
     
+    const currentOriginalPrompt = originalPrompt; // Capture current original prompt for comparison
     setIsPreviewingSuggestion(true);
     setSuggestionPreview(null);
     setSuggestionPreviewError(null);
+    setPromptForPreviewComparison(null);
+
 
     try {
       const result = await applySingleSuggestion({
-        originalPrompt,
+        originalPrompt: currentOriginalPrompt, // Use the captured original prompt
         suggestionToApply: suggestion,
       });
       setSuggestionPreview(result);
+      setPromptForPreviewComparison(currentOriginalPrompt); // Set original prompt for comparison
       toast({
         title: "Suggestion Previewed",
         description: "Successfully generated a preview for the suggestion.",
@@ -338,7 +345,7 @@ export default function PromptRefinerPage() {
           <Separator />
           <PromptUploader 
             onAnalyze={handleAnalyzePrompt} 
-            isLoading={isLoadingAnalysis} // This is fine, PromptUploader handles its own loading state for its button
+            isLoading={isLoadingAnalysis}
             initialPrompt={originalPrompt}
             initialLlmType={originalLlmType}
             initialIsDeepResearch={originalIsDeepResearch}
@@ -350,7 +357,7 @@ export default function PromptRefinerPage() {
               isLoading={isLoadingAnalysis}
               error={analysisError}
               onPreviewSuggestion={handlePreviewSuggestion}
-              globalIsLoading={anyLoading} // Pass global loading state
+              globalIsLoading={anyLoading} 
               onExplainSuggestion={handleExplainSuggestion}
               suggestionExplanation={suggestionExplanation}
               explanationError={explanationError}
@@ -365,13 +372,14 @@ export default function PromptRefinerPage() {
             />
           )}
 
-          {(suggestionPreview || isPreviewingSuggestion || suggestionPreviewError) && (
+          {(suggestionPreview || isPreviewingSuggestion || suggestionPreviewError || promptForPreviewComparison) && (
              <SuggestionPreviewDisplay
                 previewResult={suggestionPreview}
                 isLoading={isPreviewingSuggestion}
                 error={suggestionPreviewError}
                 onApplyPreview={handleApplyPreviewToEditor}
                 disabled={anyLoading}
+                originalPromptForComparison={promptForPreviewComparison}
               />
           )}
 
@@ -387,8 +395,8 @@ export default function PromptRefinerPage() {
               <Separator />
               <EnhancedPromptDisplay
                 enhancedPrompt={enhancedPrompt}
-                isLoading={isLoadingEnhancedPrompt} // Its own loading state
-                globalIsLoading={anyLoading} // Global loading state
+                isLoading={isLoadingEnhancedPrompt} 
+                globalIsLoading={anyLoading} 
                 selectedFormat={selectedFormat}
                 fileName="refined_prompt"
                 error={generationError}
@@ -404,7 +412,7 @@ export default function PromptRefinerPage() {
             history={history}
             onLoadHistoryItem={handleLoadHistoryItem}
             onClearHistory={handleClearHistory}
-            isLoading={anyLoading} // This correctly disables its buttons
+            isLoading={anyLoading}
           />
         </div>
       </main>
