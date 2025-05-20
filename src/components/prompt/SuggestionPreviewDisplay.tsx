@@ -5,16 +5,18 @@ import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-sugges
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Eye, Loader2, CheckCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface SuggestionPreviewDisplayProps {
   previewResult: ApplySingleSuggestionOutput | null;
   isLoading: boolean;
   error?: string | null;
+  onApplyPreview?: (previewText: string) => void;
 }
 
-export function SuggestionPreviewDisplay({ previewResult, isLoading, error }: SuggestionPreviewDisplayProps) {
+export function SuggestionPreviewDisplay({ previewResult, isLoading, error, onApplyPreview }: SuggestionPreviewDisplayProps) {
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -36,13 +38,25 @@ export function SuggestionPreviewDisplay({ previewResult, isLoading, error }: Su
 
     if (previewResult?.previewPrompt) {
       return (
-        <Textarea
-          value={previewResult.previewPrompt}
-          readOnly
-          rows={8}
-          className="text-base bg-muted/30 font-mono"
-          aria-label="Preview of prompt with suggestion applied"
-        />
+        <>
+          <Textarea
+            value={previewResult.previewPrompt}
+            readOnly
+            rows={8}
+            className="text-base bg-muted/30 font-mono"
+            aria-label="Preview of prompt with suggestion applied"
+          />
+          {onApplyPreview && (
+            <Button 
+              onClick={() => onApplyPreview(previewResult.previewPrompt)} 
+              className="mt-4 w-full sm:w-auto"
+              variant="outline"
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Apply to Editor
+            </Button>
+          )}
+        </>
       );
     }
     
@@ -57,7 +71,7 @@ export function SuggestionPreviewDisplay({ previewResult, isLoading, error }: Su
           <span>Suggestion Preview</span>
         </CardTitle>
         <CardDescription>
-          This shows how the original prompt might look with a single selected suggestion applied.
+          This shows how the original prompt might look with a single selected suggestion applied. You can apply this version to the main editor.
         </CardDescription>
       </CardHeader>
       <CardContent>
