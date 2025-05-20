@@ -5,6 +5,8 @@ import type { AnalyzePromptOutput } from '@/ai/flows/prompt-analysis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu, Eye, Star, Activity, HelpCircle, Loader2 as DialogLoader } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
@@ -31,6 +33,8 @@ interface PromptAnalysisDisplayProps {
   explanationError: string | null;
   currentSuggestionForExplanation: string | null;
   onCloseExplanationDialog: () => void;
+  selectedSuggestionsForEnhancement: Record<string, boolean>;
+  onToggleSuggestionForEnhancement: (suggestion: string) => void;
 }
 
 export function PromptAnalysisDisplay({ 
@@ -45,6 +49,8 @@ export function PromptAnalysisDisplay({
   explanationError,
   currentSuggestionForExplanation,
   onCloseExplanationDialog,
+  selectedSuggestionsForEnhancement,
+  onToggleSuggestionForEnhancement,
 }: PromptAnalysisDisplayProps) {
   if (isLoading) {
     return (
@@ -87,7 +93,7 @@ export function PromptAnalysisDisplay({
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6" /><span>Prompt Analysis</span></CardTitle>
-          <CardDescription>Here's what our AI thinks about your prompt, its clarity, how it can be improved, and a model suggestion.</CardDescription>
+          <CardDescription>Here's what our AI thinks about your prompt, its clarity, how it can be improved, and a model suggestion. Select suggestions to include in the enhanced prompt.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
@@ -115,16 +121,27 @@ export function PromptAnalysisDisplay({
             <div>
               <h3 className="text-lg font-semibold flex items-center gap-2 mb-2 text-foreground">
                 <ListChecks className="h-5 w-5 text-primary" />
-                Improvement Suggestions
+                Improvement Suggestions (Select to apply)
               </h3>
               <ul className="list-none space-y-3 pl-0">
                 {analysisResult.suggestions.map((suggestion, index) => (
-                  <li key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 border rounded-md bg-muted/20">
+                  <li key={index} className="flex flex-col sm:flex-row items-start gap-2 p-3 border rounded-md bg-muted/20">
                     <div className="flex items-start flex-grow">
-                      <ThumbsUp className="h-4 w-4 text-green-500 mr-3 mt-1 shrink-0" />
-                      <span className="text-card-foreground/90 flex-grow">{suggestion}</span>
+                       <Checkbox
+                        id={`suggestion-checkbox-${index}`}
+                        checked={selectedSuggestionsForEnhancement[suggestion] ?? false}
+                        onCheckedChange={() => onToggleSuggestionForEnhancement(suggestion)}
+                        className="mr-3 mt-1 shrink-0"
+                        aria-label={`Select suggestion: ${suggestion}`}
+                      />
+                      <Label htmlFor={`suggestion-checkbox-${index}`} className="flex-grow cursor-pointer">
+                        <div className="flex items-start">
+                          <ThumbsUp className="h-4 w-4 text-green-500 mr-2 mt-1 shrink-0" />
+                          <span className="text-card-foreground/90 flex-grow">{suggestion}</span>
+                        </div>
+                      </Label>
                     </div>
-                    <div className="flex gap-2 self-start sm:self-center mt-2 sm:mt-0 shrink-0">
+                    <div className="flex gap-2 self-start sm:self-center mt-2 sm:mt-0 shrink-0 sm:ml-auto pl-7 sm:pl-0">
                       <Button 
                         variant="outline" 
                         size="sm" 

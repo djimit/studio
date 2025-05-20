@@ -83,6 +83,7 @@ export default function PromptRefinerPage() {
   const [currentSuggestionForExplanation, setCurrentSuggestionForExplanation] = useState<string | null>(null);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [selectedSuggestionsForEnhancement, setSelectedSuggestionsForEnhancement] = useState<Record<string, boolean>>({});
 
   const { toast } = useToast();
 
@@ -98,6 +99,7 @@ export default function PromptRefinerPage() {
     setCurrentSuggestionForExplanation(null);
     setExplanationError(null);
     setGenerationError(null);
+    setSelectedSuggestionsForEnhancement({});
   }
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
@@ -122,6 +124,11 @@ export default function PromptRefinerPage() {
     try {
       const result = await analyzePrompt(analysisInput);
       setAnalysisResult(result);
+      if (result && result.suggestions) {
+        const initialSelectedSuggestions: Record<string, boolean> = {};
+        result.suggestions.forEach(s => initialSelectedSuggestions[s] = true); // Default to all selected
+        setSelectedSuggestionsForEnhancement(initialSelectedSuggestions);
+      }
       setHistory(addHistoryItem({ originalPrompt: prompt, originalLlmType: llmType, originalIsDeepResearch: isDeepResearch, analysisResult: result }));
       toast({
         title: "Analysis Complete",
@@ -220,10 +227,14 @@ export default function PromptRefinerPage() {
     setEnhancedPrompt(null); 
     setGenerationError(null);
 
+    const activeSuggestions = analysisResult.suggestions.filter(
+      (suggestion) => selectedSuggestionsForEnhancement[suggestion]
+    );
+
     try {
       const result = await generateEnhancedPrompt({
         originalPrompt,
-        suggestions: analysisResult.suggestions.join('\n- '), 
+        suggestions: activeSuggestions, 
         format: selectedFormat,
       });
       setEnhancedPrompt(result.enhancedPrompt);
@@ -265,6 +276,11 @@ export default function PromptRefinerPage() {
     setAnalysisResult(item.analysisResult);
     setAnalysisError(null); // Clear any previous errors
     resetSecondaryStates();
+     if (item.analysisResult && item.analysisResult.suggestions) {
+        const initialSelected: Record<string, boolean> = {};
+        item.analysisResult.suggestions.forEach(s => initialSelected[s] = true);
+        setSelectedSuggestionsForEnhancement(initialSelected);
+      }
     toast({
       title: "History Item Loaded",
       description: "Selected refinement has been loaded.",
@@ -277,6 +293,13 @@ export default function PromptRefinerPage() {
       title: "History Cleared",
       description: "All refinement history has been deleted.",
     });
+  };
+
+  const handleToggleSuggestionForEnhancement = (suggestion: string) => {
+    setSelectedSuggestionsForEnhancement(prev => ({
+      ...prev,
+      [suggestion]: !prev[suggestion],
+    }));
   };
 
   const anyLoading = isLoadingAnalysis || isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation;
@@ -313,6 +336,8 @@ export default function PromptRefinerPage() {
                 setCurrentSuggestionForExplanation(null);
                 setExplanationError(null);
               }}
+              selectedSuggestionsForEnhancement={selectedSuggestionsForEnhancement}
+              onToggleSuggestionForEnhancement={handleToggleSuggestionForEnhancement}
             />
           )}
 
@@ -325,7 +350,7 @@ export default function PromptRefinerPage() {
           )}
 
 
-          {analysisResult && !analysisError && analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
+          {analysisResult && !analysisError && (
             <>
               <Separator />
               <FormatSelector
@@ -341,7 +366,8 @@ export default function PromptRefinerPage() {
                 fileName="refined_prompt"
                 error={generationError}
                 onGenerate={handleGenerateEnhancedPrompt}
-                showGenerateButton={!!analysisResult && !analysisError}
+                showGenerateButton={!!analysisResult && !analysisError && (analysisResult.suggestions && analysisResult.suggestions.length > 0 || Object.values(selectedSuggestionsForEnhancement).some(Boolean))}
+                canGenerate={Object.values(selectedSuggestionsForEnhancement).some(Boolean) || (analysisResult?.suggestions?.length === 0)}
               />
             </>
           )}

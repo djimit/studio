@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +17,7 @@ interface EnhancedPromptDisplayProps {
   error?: string | null;
   onGenerate: () => void;
   showGenerateButton: boolean;
+  canGenerate?: boolean; // New prop to control button disabled state based on selections
 }
 
 export function EnhancedPromptDisplay({
@@ -26,6 +28,7 @@ export function EnhancedPromptDisplay({
   error,
   onGenerate,
   showGenerateButton,
+  canGenerate = true, // Default to true if not provided
 }: EnhancedPromptDisplayProps) {
   
   const handleDownload = () => {
@@ -70,7 +73,10 @@ export function EnhancedPromptDisplay({
       );
     }
     
-    if (showGenerateButton) { // If generate button is visible, but no prompt yet (and not loading from generate click)
+    if (showGenerateButton) { 
+        if (!canGenerate) {
+             return <p className="text-muted-foreground">Select at least one suggestion to generate an enhanced prompt, or if no suggestions are available, click "Generate Enhanced Prompt" for a general refinement.</p>;
+        }
         return <p className="text-muted-foreground">Click "Generate Enhanced Prompt" to see the result.</p>;
     }
 
@@ -91,7 +97,11 @@ export function EnhancedPromptDisplay({
       </CardHeader>
       <CardContent>
         {showGenerateButton && (
-          <Button onClick={onGenerate} disabled={isLoading} className="w-full sm:w-auto mb-6">
+          <Button 
+            onClick={onGenerate} 
+            disabled={isLoading || !canGenerate} 
+            className="w-full sm:w-auto mb-6"
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -107,3 +117,4 @@ export function EnhancedPromptDisplay({
     </Card>
   );
 }
+      

@@ -1,3 +1,4 @@
+
 // This file holds the Genkit flow for generating an enhanced prompt based on suggestions, allowing users to download it in markdown or JSON format.
 
 'use server';
@@ -7,7 +8,7 @@ import {z} from 'genkit';
 
 const EnhancedPromptGenerationInputSchema = z.object({
   originalPrompt: z.string().describe('The original prompt uploaded by the user.'),
-  suggestions: z.string().describe('AI suggestions for improving the prompt.'),
+  suggestions: z.array(z.string()).describe('A list of AI suggestions selected by the user to improve the prompt.'),
   format: z.enum(['markdown', 'json']).describe('The desired output format (markdown or json).'),
 });
 export type EnhancedPromptGenerationInput = z.infer<
@@ -31,13 +32,24 @@ const enhancedPromptGenerationPrompt = ai.definePrompt({
   name: 'enhancedPromptGenerationPrompt',
   input: {schema: EnhancedPromptGenerationInputSchema},
   output: {schema: EnhancedPromptGenerationOutputSchema},
-  prompt: `You are an AI prompt enhancer. Take the original prompt and the suggestions and create the best prompt possible in the requested format.
+  prompt: `You are an AI prompt enhancer.
+Take the original prompt and incorporate the following selected suggestions to create the best possible new prompt.
+If no specific suggestions are provided, refine the original prompt based on its general quality, clarity, and completeness.
 
-Original Prompt: {{{originalPrompt}}}
+Original Prompt:
+{{{originalPrompt}}}
 
-Suggestions: {{{suggestions}}}
+{{#if suggestions.length}}
+Selected Suggestions to Incorporate:
+{{#each suggestions}}
+- {{{this}}}
+{{/each}}
+{{else}}
+(No specific suggestions were selected by the user. Perform a general enhancement of the original prompt.)
+{{/if}}
 
 Output the enhanced prompt in {{{format}}} format.
+Ensure the output is only the enhanced prompt itself, formatted as requested.
 `,
 });
 
