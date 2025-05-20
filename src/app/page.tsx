@@ -57,6 +57,23 @@ const promptTemplates: PromptTemplate[] = [
   }
 ];
 
+// Helper function to extract a more detailed error message
+const getDetailedErrorMessage = (error: unknown, context: string): string => {
+  console.error(`Error during ${context}:`, error); // Log the full error for debugging
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  // Attempt to extract message if it's an object with a message property (common for API errors)
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return `An unknown error occurred during ${context}.`;
+};
+
 
 export default function PromptRefinerPage() {
   const [originalPrompt, setOriginalPrompt] = useState<string>('');
@@ -95,16 +112,16 @@ export default function PromptRefinerPage() {
 
   const resetSecondaryStates = () => {
     setAnalysisResult(null); 
+    setAnalysisError(null); 
     setEnhancedPrompt(null);
+    setGenerationError(null);
     setSuggestionPreview(null);
     setSuggestionPreviewError(null);
     setPromptForPreviewComparison(null);
     setSuggestionExplanation(null);
     setCurrentSuggestionForExplanation(null);
     setExplanationError(null);
-    setGenerationError(null);
     setSelectedSuggestionsForEnhancement({});
-    setAnalysisError(null); 
   }
 
   const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
@@ -138,8 +155,7 @@ export default function PromptRefinerPage() {
         description: "Prompt analysis finished successfully.",
       });
     } catch (error) {
-      console.error("Error analyzing prompt:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during analysis.";
+      const errorMessage = getDetailedErrorMessage(error, "prompt analysis");
       setAnalysisError(errorMessage);
       toast({
         title: "Analysis Failed",
@@ -154,7 +170,7 @@ export default function PromptRefinerPage() {
   const handlePreviewSuggestion = async (suggestion: string) => {
     if (!originalPrompt) return;
     
-    const currentOriginalPrompt = originalPrompt; // Capture current original prompt for comparison
+    const currentOriginalPrompt = originalPrompt; 
     setIsPreviewingSuggestion(true);
     setSuggestionPreview(null);
     setSuggestionPreviewError(null);
@@ -163,18 +179,17 @@ export default function PromptRefinerPage() {
 
     try {
       const result = await applySingleSuggestion({
-        originalPrompt: currentOriginalPrompt, // Use the captured original prompt
+        originalPrompt: currentOriginalPrompt, 
         suggestionToApply: suggestion,
       });
       setSuggestionPreview(result);
-      setPromptForPreviewComparison(currentOriginalPrompt); // Set original prompt for comparison
+      setPromptForPreviewComparison(currentOriginalPrompt); 
       toast({
         title: "Suggestion Previewed",
         description: "Successfully generated a preview for the suggestion.",
       });
     } catch (error) {
-      console.error("Error previewing suggestion:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during preview.";
+      const errorMessage = getDetailedErrorMessage(error, "suggestion preview");
       setSuggestionPreviewError(errorMessage);
       toast({
         title: "Preview Failed",
@@ -222,8 +237,7 @@ export default function PromptRefinerPage() {
         description: "Successfully generated explanation.",
       });
     } catch (error) {
-      console.error("Error explaining suggestion:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during explanation.";
+      const errorMessage = getDetailedErrorMessage(error, "suggestion explanation");
       setExplanationError(errorMessage);
       toast({
         title: "Explanation Failed",
@@ -259,8 +273,7 @@ export default function PromptRefinerPage() {
         description: `Prompt generated in ${selectedFormat} format.`,
       });
     } catch (error) {
-      console.error("Error generating enhanced prompt:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during generation.";
+      const errorMessage = getDetailedErrorMessage(error, "enhanced prompt generation");
       setGenerationError(errorMessage);
       toast({
         title: "Generation Failed",
@@ -360,6 +373,7 @@ export default function PromptRefinerPage() {
               globalIsLoading={anyLoading} 
               onExplainSuggestion={handleExplainSuggestion}
               suggestionExplanation={suggestionExplanation}
+              isLoadingExplanation={isLoadingExplanation}
               explanationError={explanationError}
               currentSuggestionForExplanation={currentSuggestionForExplanation}
               onCloseExplanationDialog={() => {
