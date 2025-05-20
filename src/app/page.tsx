@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { AnalyzePromptOutput } from '@/ai/flows/prompt-analysis';
+import type { AnalyzePromptOutput, AnalyzePromptInput } from '@/ai/flows/prompt-analysis';
 import { analyzePrompt } from '@/ai/flows/prompt-analysis';
 import { generateEnhancedPrompt } from '@/ai/flows/enhanced-prompt-generation';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { PromptUploader } from '@/components/prompt/PromptUploader';
+import type { LlmType } from '@/components/prompt/PromptUploader';
 import { PromptAnalysisDisplay } from '@/components/prompt/PromptAnalysisDisplay';
 import { FormatSelector } from '@/components/prompt/FormatSelector';
 import { EnhancedPromptDisplay } from '@/components/prompt/EnhancedPromptDisplay';
@@ -26,7 +27,7 @@ export default function PromptRefinerPage() {
 
   const { toast } = useToast();
 
-  const handleAnalyzePrompt = async (prompt: string) => {
+  const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
     setOriginalPrompt(prompt);
     setIsLoadingAnalysis(true);
     setAnalysisResult(null); // Reset previous results
@@ -34,8 +35,16 @@ export default function PromptRefinerPage() {
     setAnalysisError(null);
     setGenerationError(null);
 
+    const analysisInput: AnalyzePromptInput = { prompt };
+    if (llmType) {
+      analysisInput.llmType = llmType;
+    }
+    if (isDeepResearch !== undefined) {
+      analysisInput.isDeepResearch = isDeepResearch;
+    }
+
     try {
-      const result = await analyzePrompt({ prompt });
+      const result = await analyzePrompt(analysisInput);
       setAnalysisResult(result);
       toast({
         title: "Analysis Complete",
