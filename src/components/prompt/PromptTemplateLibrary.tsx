@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { LlmType } from './PromptUploader';
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Code2, Palette, MessagesSquare, Image as ImageIcon, Search, BookOpenCheck } from 'lucide-react'; // Added BookOpenCheck for variety
+// Removed ScrollArea and ScrollBar as we'll use a native scroll on a div for the grid
+import { Code2, Palette, MessagesSquare, Image as ImageIcon, Search, BookOpenCheck } from 'lucide-react';
 
 export interface PromptTemplate {
   title: string;
@@ -52,12 +52,14 @@ export function PromptTemplateLibrary({ templates, onSelectTemplate, disabled = 
             <span>Prompt Template Library</span>
         </CardTitle>
         <CardDescription>
-          Get started quickly by selecting one of our curated prompt templates.
+          Get started quickly by selecting one of our curated prompt templates. Displays in two rows.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="w-full whitespace-nowrap rounded-md">
-          <div className="flex w-max space-x-4 pb-4">
+        {/* Container for horizontal scrolling if grid content overflows */}
+        <div className="overflow-x-auto pb-2">
+          {/* Grid layout: 2 rows, items flow into columns, columns are 300px wide */}
+          <div className="grid grid-rows-2 grid-flow-col auto-cols-[300px] gap-4">
             {templates.map((template, index) => (
               <Card key={index} className="w-[300px] min-h-[220px] flex flex-col justify-between shadow-md hover:shadow-xl transition-shadow">
                 <CardHeader>
@@ -96,9 +98,9 @@ export function PromptTemplateLibrary({ templates, onSelectTemplate, disabled = 
               </Card>
             ))}
           </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
