@@ -4,10 +4,11 @@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Download, Sparkles, Loader2, RefreshCw } from 'lucide-react';
+import { Download, Sparkles, Loader2, RefreshCw, Copy } from 'lucide-react';
 import { downloadTextFile } from '@/lib/download';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedPromptDisplayProps {
   enhancedPrompt: string | null;
@@ -34,6 +35,21 @@ export function EnhancedPromptDisplay({
   canGenerate = true,
   onRefineThisPrompt,
 }: EnhancedPromptDisplayProps) {
+  const { toast } = useToast();
+
+  const handleCopyEnhancedPrompt = async () => {
+    if (!enhancedPrompt) {
+      toast({ title: 'Nothing to Copy', description: 'Enhanced prompt is empty.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(enhancedPrompt);
+      toast({ title: 'Enhanced Prompt Copied!', description: 'The enhanced prompt has been copied to your clipboard.' });
+    } catch (err) {
+      console.error('Failed to copy enhanced prompt: ', err);
+      toast({ title: 'Copy Failed', description: 'Could not copy the enhanced prompt.', variant: 'destructive' });
+    }
+  };
   
   const handleDownload = () => {
     if (enhancedPrompt) {
@@ -69,15 +85,28 @@ export function EnhancedPromptDisplay({
 
     if (enhancedPrompt) {
       return (
-        <>
-          <Textarea
-            value={enhancedPrompt}
-            readOnly
-            rows={10}
-            className="text-base bg-muted/30 font-mono"
-            disabled={globalIsLoading} // Disable textarea if anything is loading globally
-          />
-          <div className="flex flex-wrap gap-2 mt-4">
+        <div className="space-y-4">
+          <div className="relative">
+            <Textarea
+              value={enhancedPrompt}
+              readOnly
+              rows={10}
+              className="text-base bg-muted/30 font-mono pr-12" // Add padding for copy button
+              disabled={globalIsLoading} // Disable textarea if anything is loading globally
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={handleCopyEnhancedPrompt}
+              disabled={globalIsLoading || !enhancedPrompt}
+              aria-label="Copy enhanced prompt"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button onClick={handleDownload} className="sm:w-auto" disabled={globalIsLoading}>
               <Download className="mr-2 h-4 w-4" />
               Download {selectedFormat === 'markdown' ? 'Markdown' : 'JSON'}
@@ -89,7 +118,7 @@ export function EnhancedPromptDisplay({
               </Button>
             )}
           </div>
-        </>
+        </div>
       );
     }
     
@@ -137,4 +166,3 @@ export function EnhancedPromptDisplay({
     </Card>
   );
 }
-      

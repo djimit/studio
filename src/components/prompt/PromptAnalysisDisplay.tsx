@@ -7,9 +7,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu, Eye, Star, Activity, HelpCircle, Loader2 as DialogLoader } from 'lucide-react';
+import { Lightbulb, ThumbsUp, ListChecks, FileText, Cpu, Eye, Star, Activity, HelpCircle, Loader2 as DialogLoader, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,21 @@ export function PromptAnalysisDisplay({
   selectedSuggestionsForEnhancement,
   onToggleSuggestionForEnhancement,
 }: PromptAnalysisDisplayProps) {
+  const { toast } = useToast();
+
+  const handleCopyText = async (textToCopy: string | null | undefined, type: string) => {
+    if (!textToCopy) {
+      toast({ title: 'Nothing to Copy', description: `${type} is empty.`, variant: 'destructive' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast({ title: `${type} Copied!`, description: `${type} copied to clipboard.` });
+    } catch (err) {
+      console.error(`Failed to copy ${type}: `, err);
+      toast({ title: 'Copy Failed', description: `Could not copy ${type}.`, variant: 'destructive' });
+    }
+  };
   
   if (isLoading) { // This is for the initial analysis loading
     return (
@@ -143,7 +159,17 @@ export function PromptAnalysisDisplay({
                         </div>
                       </Label>
                     </div>
-                    <div className="flex gap-2 self-start sm:self-center mt-2 sm:mt-0 shrink-0 sm:ml-auto pl-7 sm:pl-0">
+                    <div className="flex gap-1.5 self-start sm:self-center mt-2 sm:mt-0 shrink-0 sm:ml-auto pl-7 sm:pl-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleCopyText(suggestion, "Suggestion")}
+                        disabled={globalIsLoading}
+                        aria-label={`Copy suggestion: ${suggestion}`}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -192,15 +218,27 @@ export function PromptAnalysisDisplay({
       <Dialog open={isExplainDialogOpen} onOpenChange={(open) => { if (!open) onCloseExplanationDialog(); }}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <HelpCircle className="h-6 w-6 text-primary" />
-              Explanation for Suggestion
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <HelpCircle className="h-6 w-6 text-primary" />
+                Explanation
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCopyText(suggestionExplanation, "Explanation")}
+                disabled={isLoadingExplanation || !suggestionExplanation}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                aria-label="Copy explanation"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
             </DialogTitle>
             <DialogDescription>
-              "{currentSuggestionForExplanation}"
+              For suggestion: "{currentSuggestionForExplanation}"
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 max-h-[60vh] overflow-y-auto">
             {isLoadingExplanation && (
               <div className="flex items-center justify-center space-x-2">
                 <DialogLoader className="h-6 w-6 animate-spin text-primary" />
@@ -229,4 +267,3 @@ export function PromptAnalysisDisplay({
     </>
   );
 }
-

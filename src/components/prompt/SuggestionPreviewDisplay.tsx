@@ -7,8 +7,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Eye, Loader2, CheckCircle } from 'lucide-react';
+import { Eye, Loader2, CheckCircle, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface SuggestionPreviewDisplayProps {
   previewResult: ApplySingleSuggestionOutput | null;
@@ -27,6 +28,21 @@ export function SuggestionPreviewDisplay({
   disabled = false,
   originalPromptForComparison,
 }: SuggestionPreviewDisplayProps) {
+  const { toast } = useToast();
+
+  const handleCopyText = async (textToCopy: string | null | undefined, type: string) => {
+    if (!textToCopy) {
+      toast({ title: 'Nothing to Copy', description: `${type} is empty.`, variant: 'destructive' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast({ title: `${type} Copied!`, description: `${type} copied to clipboard.` });
+    } catch (err) {
+      console.error(`Failed to copy ${type}: `, err);
+      toast({ title: 'Copy Failed', description: `Could not copy ${type}.`, variant: 'destructive' });
+    }
+  };
 
   const renderContent = () => {
     if (isLoading) { 
@@ -57,29 +73,51 @@ export function SuggestionPreviewDisplay({
       return (
         <>
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-1/2 space-y-2">
+            <div className="w-full sm:w-1/2 space-y-2 relative">
               <Label htmlFor="original-prompt-preview-area" className="text-sm font-medium">Original Prompt</Label>
               <Textarea
                 id="original-prompt-preview-area"
                 value={originalPromptForComparison}
                 readOnly
                 rows={8}
-                className="text-sm bg-muted/20 font-mono"
+                className="text-sm bg-muted/20 font-mono pr-10" // Padding for button
                 aria-label="Original prompt for comparison"
                 disabled={disabled || isLoading}
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-7 right-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => handleCopyText(originalPromptForComparison, "Original Prompt")}
+                disabled={disabled || isLoading || !originalPromptForComparison}
+                aria-label="Copy original prompt"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="w-full sm:w-1/2 space-y-2">
+            <div className="w-full sm:w-1/2 space-y-2 relative">
               <Label htmlFor="suggested-prompt-preview-area" className="text-sm font-medium">Preview with Suggestion</Label>
               <Textarea
                 id="suggested-prompt-preview-area"
                 value={previewResult.previewPrompt}
                 readOnly
                 rows={8}
-                className="text-sm bg-muted/30 font-mono"
+                className="text-sm bg-muted/30 font-mono pr-10" // Padding for button
                 aria-label="Preview of prompt with suggestion applied"
                 disabled={disabled || isLoading}
               />
+               <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-7 right-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => handleCopyText(previewResult.previewPrompt, "Previewed Prompt")}
+                disabled={disabled || isLoading || !previewResult.previewPrompt}
+                aria-label="Copy previewed prompt"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           {onApplyPreview && (
@@ -97,15 +135,26 @@ export function SuggestionPreviewDisplay({
       );
     } else if (previewResult?.previewPrompt) { // Fallback if originalPromptForComparison is not available
        return (
-        <>
+        <div className="relative">
           <Textarea
             value={previewResult.previewPrompt}
             readOnly
             rows={8}
-            className="text-base bg-muted/30 font-mono"
+            className="text-base bg-muted/30 font-mono pr-10" // Padding for button
             aria-label="Preview of prompt with suggestion applied"
             disabled={disabled || isLoading}
           />
+           <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-1 right-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={() => handleCopyText(previewResult.previewPrompt, "Previewed Prompt")}
+              disabled={disabled || isLoading || !previewResult.previewPrompt}
+              aria-label="Copy previewed prompt"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
           {onApplyPreview && (
             <Button 
               onClick={() => onApplyPreview(previewResult.previewPrompt)} 
@@ -117,7 +166,7 @@ export function SuggestionPreviewDisplay({
               Apply to Editor
             </Button>
           )}
-        </>
+        </div>
       );
     }
     
@@ -149,4 +198,3 @@ export function SuggestionPreviewDisplay({
     </Card>
   );
 }
-

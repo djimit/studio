@@ -6,10 +6,11 @@ import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Wand2, Brain, SearchCheck } from 'lucide-react';
+import { Loader2, Wand2, Brain, SearchCheck, Copy } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
 
 export type LlmType = 'general' | 'code' | 'creative' | 'image' | 'research';
 
@@ -31,6 +32,7 @@ export function PromptUploader({
   const [prompt, setPrompt] = useState(initialPrompt);
   const [llmType, setLlmType] = useState<LlmType | undefined>(initialLlmType);
   const [isDeepResearch, setIsDeepResearch] = useState<boolean>(initialIsDeepResearch);
+  const { toast } = useToast();
 
   useEffect(() => {
     setPrompt(initialPrompt);
@@ -51,6 +53,31 @@ export function PromptUploader({
     }
   };
 
+  const handleCopyPrompt = async () => {
+    if (!prompt) {
+      toast({
+        title: 'Nothing to Copy',
+        description: 'Prompt is empty.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast({
+        title: 'Prompt Copied!',
+        description: 'The current prompt has been copied to your clipboard.',
+      });
+    } catch (err) {
+      console.error('Failed to copy prompt: ', err);
+      toast({
+        title: 'Copy Failed',
+        description: 'Could not copy the prompt.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -64,14 +91,27 @@ export function PromptUploader({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Textarea
-            placeholder="Enter your prompt here or select a template above..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={6}
-            className="text-base"
-            disabled={isLoading}
-          />
+          <div className="relative">
+            <Textarea
+              placeholder="Enter your prompt here or select a template above..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={6}
+              className="text-base pr-12" // Add padding for the button
+              disabled={isLoading}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={handleCopyPrompt}
+              disabled={isLoading || !prompt.trim()}
+              aria-label="Copy prompt"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="llmTypeSelect" className="flex items-center gap-2">
