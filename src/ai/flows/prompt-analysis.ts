@@ -20,10 +20,28 @@ export type AnalyzePromptInput = z.infer<typeof AnalyzePromptInputSchema>;
 const AnalyzePromptOutputSchema = z.object({
   analysis: z.string().describe('The AI analysis of the prompt.'),
   suggestions: z.array(z.string()).describe('Suggestions for improving the prompt.'),
+  
+  promptClarityScore: z.number().min(1).max(10).describe('A score from 1 (Very Unclear) to 10 (Very Clear) assessing the overall clarity of the prompt.').optional(),
+  clarityScoreReasoning: z.string().describe('The reasoning behind the assigned clarity score.').optional(),
+
+  specificityScore: z.number().min(1).max(10).describe('A score from 1 (Very Vague) to 10 (Very Specific) assessing the prompt\'s specificity.').optional(),
+  specificityScoreReasoning: z.string().describe('The reasoning behind the assigned specificity score.').optional(),
+
+  actionabilityScore: z.number().min(1).max(10).describe('A score from 1 (Unclear Task) to 10 (Clear Task) assessing the prompt\'s actionability.').optional(),
+  actionabilityScoreReasoning: z.string().describe('The reasoning behind the assigned actionability score.').optional(),
+
+  concisenessScore: z.number().min(1).max(10).describe('A score from 1 (Very Wordy) to 10 (Very Concise) assessing the prompt\'s conciseness.').optional(),
+  concisenessScoreReasoning: z.string().describe('The reasoning behind the assigned conciseness score.').optional(),
+
+  potentialAmbiguities: z.array(z.string()).describe("An array of strings, each identifying a word, phrase, or part of the prompt that could be ambiguous or lead to multiple interpretations. Empty if none significant.").optional(),
+  
+  tokenCountEstimation: z.number().optional().describe("A rough, general estimation of the prompt's token count. Highly approximate."),
+
+  overallRating: z.string().describe("A qualitative overall rating for the prompt (e.g., 'Needs Significant Improvement', 'Good Start', 'Excellent').").optional(),
+  overallRatingReasoning: z.string().describe("A brief justification for the overall rating based on the comprehensive analysis.").optional(),
+
   suggestedModel: z.string().optional().describe('The suggested LLM model from the provided list that would be best for this prompt. If no specific recommendation, state why.'),
   modelSuggestionReasoning: z.string().optional().describe('The reasoning behind suggesting the specific LLM model, or explanation if no specific model is recommended.'),
-  promptClarityScore: z.number().min(1).max(10).describe('A score from 1 (Very Unclear) to 10 (Very Clear) assessing the clarity of the prompt.').optional(),
-  clarityScoreReasoning: z.string().describe('The reasoning behind the assigned clarity score.').optional(),
 });
 export type AnalyzePromptOutput = z.infer<typeof AnalyzePromptOutputSchema>;
 
@@ -56,7 +74,7 @@ const analyzePromptPrompt = ai.definePrompt({
   name: 'analyzePromptPrompt',
   input: {schema: AnalyzePromptInputSchema},
   output: {schema: AnalyzePromptOutputSchema},
-  prompt: `You are an AI prompt analyzer and LLM consultant. Analyze the following prompt and provide suggestions for improvement.
+  prompt: `You are an AI prompt analyzer and LLM consultant. Analyze the following prompt and provide a comprehensive evaluation.
 Consider the context provided:
 {{#if llmType}}
 - LLM Type: {{{llmType}}} (Tailor suggestions if the prompt is for code generation, creative writing, image generation, specific research, or general purpose.)
@@ -69,21 +87,50 @@ Consider the context provided:
 
 Prompt: {{{prompt}}}
 
-Analysis:
-Provide your analysis of the prompt here.
+Analysis (General Evaluation):
+Provide your general analysis of the prompt here.
 
 Suggestions:
 Provide an array of specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type and research depth.
 
-Clarity Score:
-Assess the prompt's clarity on a scale of 1 (Very Unclear) to 10 (Very Clear).
-Base your score on factors such as:
-- Specificity: Is the prompt concrete and detailed enough?
-- Unambiguity: Is it free of confusing language or multiple interpretations?
-- Actionability: Is it clear what the LLM is supposed to do?
-- Conciseness: Is it to the point, without unnecessary fluff?
-- Completeness: Does it contain all necessary information?
-Populate 'promptClarityScore' with the integer score and 'clarityScoreReasoning' with a brief explanation for your score.
+Advanced Prompt Metrics:
+
+1.  Overall Rating:
+    Provide a qualitative overall rating for the prompt (e.g., 'Needs Significant Improvement', 'Fair, but could be clearer', 'Good Start', 'Well-Constructed', 'Excellent').
+    Populate 'overallRating' with the rating string and 'overallRatingReasoning' with a brief justification based on the comprehensive analysis.
+
+2.  Clarity Score:
+    Assess the prompt's overall clarity on a scale of 1 (Very Unclear) to 10 (Very Clear).
+    Base your score on factors such as:
+    - Specificity: Is the prompt concrete and detailed enough?
+    - Unambiguity: Is it free of confusing language or multiple interpretations?
+    - Actionability: Is it clear what the LLM is supposed to do?
+    - Conciseness: Is it to the point, without unnecessary fluff?
+    - Completeness: Does it contain all necessary information?
+    Populate 'promptClarityScore' with the integer score and 'clarityScoreReasoning' with a brief explanation for your score.
+
+3.  Specificity Score:
+    Assess the prompt's specificity on a scale of 1 (Very Vague) to 10 (Very Specific).
+    Consider: Does it clearly define the subject, desired output format, constraints, and context?
+    Populate 'specificityScore' with the integer score and 'specificityScoreReasoning' with a brief explanation for your score.
+
+4.  Actionability Score:
+    Assess the prompt's actionability on a scale of 1 (Unclear Task) to 10 (Clear Task).
+    Consider: Is it obvious what the LLM is supposed to *do* (e.g., generate, summarize, translate, list, explain, compare)?
+    Populate 'actionabilityScore' with the integer score and 'actionabilityScoreReasoning' with a brief explanation for your score.
+
+5.  Conciseness Score:
+    Assess the prompt's conciseness on a scale of 1 (Very Wordy) to 10 (Very Concise).
+    Consider: Is it free of redundant information or unnecessary fluff that doesn't contribute to the core request? Is it as short as possible while still being effective?
+    Populate 'concisenessScore' with the integer score and 'concisenessScoreReasoning' with a brief explanation for your score.
+
+6.  Potential Ambiguities:
+    Identify any words, phrases, or parts of the prompt that could be ambiguous or lead to multiple interpretations by the LLM.
+    Populate 'potentialAmbiguities' with an array of strings, each string being an identified ambiguity. If none are significant, provide an empty array.
+
+7.  Token Count Estimation:
+    Provide a rough, general estimation of the prompt's token count. Acknowledge this is highly approximate and can vary significantly between models.
+    Populate 'tokenCountEstimation' with a number. If you cannot reliably estimate, you may omit this field or provide 0 and briefly state why in the general analysis.
 
 Model Suggestion:
 Based on the prompt's content, the selected LLM Type (if any), and whether it's for deep research, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice.
@@ -97,7 +144,7 @@ Available Models:
 ${availableModels.map(m => `- ${m}`).join('\n')}
 
 Output Format:
-Ensure your output is a JSON object adhering to the specified output schema, including 'analysis', 'suggestions', 'promptClarityScore', 'clarityScoreReasoning', 'suggestedModel', and 'modelSuggestionReasoning'.
+Ensure your output is a JSON object adhering to the specified output schema, including all fields: 'analysis', 'suggestions', 'promptClarityScore', 'clarityScoreReasoning', 'specificityScore', 'specificityScoreReasoning', 'actionabilityScore', 'actionabilityScoreReasoning', 'concisenessScore', 'concisenessScoreReasoning', 'potentialAmbiguities', 'tokenCountEstimation', 'overallRating', 'overallRatingReasoning', 'suggestedModel', and 'modelSuggestionReasoning'.
 `,
 });
 
@@ -109,7 +156,8 @@ const analyzePromptFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await analyzePromptPrompt(input);
-    // Ensure suggestions is always an array, even if the model omits it or returns a string
+    
+    // Ensure suggestions is always an array
     if (output && typeof output.suggestions === 'string') {
       // @ts-ignore
       output.suggestions = [output.suggestions];
@@ -117,6 +165,16 @@ const analyzePromptFlow = ai.defineFlow(
        // @ts-ignore
       output.suggestions = [];
     }
+
+    // Ensure potentialAmbiguities is always an array
+    if (output && typeof output.potentialAmbiguities === 'string') {
+        // @ts-ignore
+      output.potentialAmbiguities = [output.potentialAmbiguities];
+    } else if (output && !Array.isArray(output.potentialAmbiguities)) {
+         // @ts-ignore
+      output.potentialAmbiguities = [];
+    }
+
     return output!;
   }
 );
