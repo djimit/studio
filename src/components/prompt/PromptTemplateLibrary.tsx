@@ -43,18 +43,21 @@ export function PromptTemplateLibrary({ templates, onSelectTemplate, disabled = 
     return null;
   }
 
-  const templatesForRow1 = templates.slice(0, 6);
-  const templatesForRow2 = templates.slice(6, 12); // Show next 6 templates, up to 12 total for this example
-
-  const renderRow = (rowTemplates: PromptTemplate[], rowIndex: number) => {
-    if (rowTemplates.length === 0) {
-      return null;
-    }
-    return (
-      <div className="overflow-x-auto pb-2 mb-4"> {/* Added mb-4 for spacing between rows */}
-        <div className="flex flex-row gap-4"> {/* Horizontal flex container for cards */}
-          {rowTemplates.map((template, index) => (
-            <Card key={`row-${rowIndex}-template-${index}`} className="w-[300px] min-w-[300px] min-h-[220px] flex flex-col justify-between shadow-md hover:shadow-xl transition-shadow">
+  return (
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+            <BookOpenCheck className="h-6 w-6 text-primary" />
+            <span>Prompt Template Library</span>
+        </CardTitle>
+        <CardDescription>
+          Get started quickly by selecting a template from the grid below. Templates are shown in up to 3 columns.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {templates.map((template, index) => (
+            <Card key={`template-${index}`} className="w-full min-h-[220px] flex flex-col justify-between shadow-md hover:shadow-xl transition-shadow">
               <CardHeader>
                 <CardTitle className="text-lg">{template.title}</CardTitle>
                 {template.llmType && (
@@ -91,24 +94,6 @@ export function PromptTemplateLibrary({ templates, onSelectTemplate, disabled = 
             </Card>
           ))}
         </div>
-      </div>
-    );
-  };
-
-  return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-            <BookOpenCheck className="h-6 w-6 text-primary" />
-            <span>Prompt Template Library</span>
-        </CardTitle>
-        <CardDescription>
-          Get started quickly by selecting a template. Templates are displayed in two horizontally scrollable rows.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {renderRow(templatesForRow1, 1)}
-        {templatesForRow2.length > 0 && renderRow(templatesForRow2, 2)}
       </CardContent>
     </Card>
   );
