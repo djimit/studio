@@ -4,14 +4,7 @@
 import * as React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardFooter 
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Loader2, Play, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -58,9 +51,9 @@ export function SimpleChainExecutor({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="step1-prompt-chain-executor-final-check">Step 1 Prompt</Label>
+            <Label htmlFor="step1-prompt-chain-executor-final-final-check">Step 1 Prompt</Label>
             <Textarea
-              id="step1-prompt-chain-executor-final-check"
+              id="step1-prompt-chain-executor-final-final-check"
               placeholder="e.g., Summarize the following text: [some long text]"
               value={step1Prompt}
               onChange={(e) => setStep1Prompt(e.target.value)}
@@ -70,9 +63,9 @@ export function SimpleChainExecutor({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="step2-prompt-template-chain-executor-final-check">Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
+            <Label htmlFor="step2-prompt-template-chain-executor-final-final-check">Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
             <Textarea
-              id="step2-prompt-template-chain-executor-final-check"
+              id="step2-prompt-template-chain-executor-final-final-check"
               placeholder="e.g., Based on the summary: {{{step1Output}}}, what are the key takeaways?"
               value={step2PromptTemplate}
               onChange={(e) => setStep2PromptTemplate(e.target.value)}
@@ -120,9 +113,9 @@ export function SimpleChainExecutor({
 
         {step1Output !== null && !error && (
           <div className="mt-6 space-y-2">
-            <Label htmlFor="step1-output-chain-executor-final-check" className="text-md font-semibold">Step 1 Output:</Label>
+            <Label htmlFor="step1-output-chain-executor-final-final-check" className="text-md font-semibold">Step 1 Output:</Label>
             <Textarea
-              id="step1-output-chain-executor-final-check"
+              id="step1-output-chain-executor-final-final-check"
               value={step1Output}
               readOnly
               rows={5}
@@ -134,9 +127,9 @@ export function SimpleChainExecutor({
 
         {finalOutput !== null && !error &&(
           <div className="mt-4 space-y-2">
-            <Label htmlFor="final-output-chain-executor-final-check" className="text-md font-semibold">Final Output (from Step 2):</Label>
+            <Label htmlFor="final-output-chain-executor-final-final-check" className="text-md font-semibold">Final Output (from Step 2):</Label>
             <Textarea
-              id="final-output-chain-executor-final-check"
+              id="final-output-chain-executor-final-final-check"
               value={finalOutput}
               readOnly
               rows={8}
