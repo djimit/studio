@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -83,78 +82,44 @@ export function SimpleChainExecutor({
               disabled={isLoading || disabled}
             />
           </div>
-          <Button
-            type="submit"
-            disabled={isLoading || disabled || !step1Prompt.trim() || !step2PromptTemplate.trim()}
-            className="w-full sm:w-auto"
-          >
+          <Button type="submit" className="w-full" disabled={isLoading || disabled}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Running Chain...
+                Running...
               </>
             ) : (
               'Run Chain'
             )}
           </Button>
         </form>
-
-        {(isLoading && !step1Output && !finalOutput && !error) && (
-          <div className="mt-6 space-y-4">
-            <div>
-              <Skeleton className="h-6 w-1/4 mb-2" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-            <div>
-              <Skeleton className="h-6 w-1/4 mb-2" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          </div>
-        )}
-
-        {error && !isLoading &&(
-          <Alert variant="destructive" className="mt-6 shadow-md">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Chain Execution Error</AlertTitle>
+        {error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-
-        {step1Output !== null && !error && (
-          <div className="mt-6 space-y-2">
-            <Label htmlFor={`${uniqueIdPrefix}-step1-output`} className="text-md font-semibold">Step 1 Output:</Label>
-            <Textarea
-              id={`${uniqueIdPrefix}-step1-output`}
-              value={step1Output}
-              readOnly
-              rows={5}
-              className="text-sm bg-muted/30 font-mono"
-              disabled={isLoading || disabled}
-            />
+        {isLoading && (
+          <div className="mt-4">
+            <Skeleton className="h-6 w-full mb-2" />
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-6 w-1/2" />
           </div>
         )}
-
-        {finalOutput !== null && !error &&(
-          <div className="mt-4 space-y-2">
-            <Label htmlFor={`${uniqueIdPrefix}-final-output`} className="text-md font-semibold">Final Output (from Step 2):</Label>
-            <Textarea
-              id={`${uniqueIdPrefix}-final-output`}
-              value={finalOutput}
-              readOnly
-              rows={8}
-              className="text-sm bg-muted/40 font-mono"
-              disabled={isLoading || disabled}
-            />
+        {step1Output && (
+          <div className="mt-4">
+            <Label>Step 1 Output</Label>
+            <div className="p-2 bg-muted rounded">{step1Output}</div>
+          </div>
+        )}
+        {finalOutput && (
+          <div className="mt-4">
+            <Label>Final Output</Label>
+            <div className="p-2 bg-muted rounded">{finalOutput}</div>
           </div>
         )}
       </CardContent>
-       { (step1Output !== null || finalOutput !== null || error) &&
-        <CardFooter>
-            <p className="text-xs text-muted-foreground">
-                Note: This is a basic chain executor. Outputs are directly from the model.
-            </p>
-        </CardFooter>
-       }
     </Card>
   );
 }
