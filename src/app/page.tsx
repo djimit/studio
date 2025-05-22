@@ -107,6 +107,7 @@ export default function PromptRefinerPage() {
   const [originalPrompt, setOriginalPrompt] = useState<string>('');
   const [originalLlmType, setOriginalLlmType] = useState<LlmType | undefined>(undefined);
   const [originalIsDeepResearch, setOriginalIsDeepResearch] = useState<boolean | undefined>(undefined);
+  const [imageDataUri, setImageDataUri] = useState<string>('');
   
   const [analysisResult, setAnalysisResult] = useState<AnalyzePromptOutput | null>(null);
   const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null);
@@ -148,7 +149,7 @@ export default function PromptRefinerPage() {
     if (!activePersona) return undefined;
 
     let combined = activePersona.instructions;
-    if (activePersona.examples) {
+    if (activePersona.examples && activePersona.examples.trim() !== '') {
       combined += `\n\n--- Additional Examples/Context for Persona ---\n${activePersona.examples}`;
     }
     return combined;
@@ -167,12 +168,20 @@ export default function PromptRefinerPage() {
     setExplanationError(null);
     setSelectedSuggestionsForEnhancement({});
     // Note: selectedPersonaId is NOT reset here, user's persona choice should persist
+    // Note: originalPrompt, originalLlmType, originalIsDeepResearch, imageDataUri are NOT reset here, they are part of the primary input
   }
 
-  const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
+  const handleAnalyzePrompt = async (
+    prompt: string, 
+    llmType?: LlmType, 
+    isDeepResearch?: boolean, 
+    _personaInstructions?: string, // We'll use getActivePersonaCombinedInstructions
+    imgDataUri?: string
+  ) => {
     setOriginalPrompt(prompt); 
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
+    setImageDataUri(imgDataUri || ''); // Update main state
     
     setIsLoadingAnalysis(true);
     resetSecondaryStates(); 
@@ -183,6 +192,9 @@ export default function PromptRefinerPage() {
     }
     if (isDeepResearch !== undefined) {
       analysisInput.isDeepResearch = isDeepResearch;
+    }
+    if (imgDataUri && imgDataUri.trim()) {
+      analysisInput.imageDataUri = imgDataUri;
     }
     
     const personaInstructionsForFlow = getActivePersonaCombinedInstructions();
@@ -201,7 +213,8 @@ export default function PromptRefinerPage() {
       setHistory(addHistoryItem({ 
         originalPrompt: prompt, 
         originalLlmType: llmType, 
-        originalIsDeepResearch: isDeepResearch, 
+        originalIsDeepResearch: isDeepResearch,
+        // imageDataUri: imgDataUri, // Consider adding to history if needed for reload
         analysisResult: result 
       }));
       toast({
@@ -262,6 +275,7 @@ export default function PromptRefinerPage() {
 
   const handleApplyPreviewToEditor = (previewText: string) => {
     setOriginalPrompt(previewText);
+    // imageDataUri remains, llmType, isDeepResearch also remain from previous explicit setting
     resetSecondaryStates(); 
     toast({
       title: "Preview Applied",
@@ -358,6 +372,7 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(template.prompt);
     setOriginalLlmType(template.llmType);
     setOriginalIsDeepResearch(template.isDeepResearch);
+    setImageDataUri(''); // Templates currently don't include image data
     resetSecondaryStates();
     toast({
       title: "Template Loaded",
@@ -369,6 +384,9 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(item.originalPrompt);
     setOriginalLlmType(item.originalLlmType);
     setOriginalIsDeepResearch(item.originalIsDeepResearch);
+    // Assuming history items don't store imageDataUri for now, so clear it.
+    // If HistoryItem is updated to store it, this line should change:
+    setImageDataUri( (item as any).imageDataUri || ''); // Or handle if it's part of HistoryItem
     
     resetSecondaryStates(); 
     
@@ -404,6 +422,7 @@ export default function PromptRefinerPage() {
 
   const handleRefineFurther = (promptToRefine: string) => {
     setOriginalPrompt(promptToRefine);
+    // imageDataUri, originalLlmType, originalIsDeepResearch remain as they were
     resetSecondaryStates();
     toast({
       title: "Prompt Loaded for Re-analysis",
@@ -448,6 +467,7 @@ export default function PromptRefinerPage() {
             initialPrompt={originalPrompt}
             initialLlmType={originalLlmType}
             initialIsDeepResearch={originalIsDeepResearch}
+            initialImageDataUri={imageDataUri}
             personas={personas}
             selectedPersonaId={selectedPersonaId}
             onSelectPersona={handleSelectPersona}
@@ -525,3 +545,4 @@ export default function PromptRefinerPage() {
     </div>
   );
 }
+

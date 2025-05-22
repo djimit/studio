@@ -15,6 +15,7 @@ const AnalyzePromptInputSchema = z.object({
   llmType: z.enum(['general', 'code', 'creative', 'image', 'research']).describe('The type of LLM the prompt is intended for (e.g., general text, code generation, creative writing, image generation, research).').optional(),
   isDeepResearch: z.boolean().describe('Whether the prompt is intended for deep research.').optional(),
   personaInstructions: z.string().optional().describe('Specific instructions defining an AI persona. If provided, the analysis and suggestions should align with this persona.'),
+  imageDataUri: z.string().optional().describe("A Data URI of an image (e.g., 'data:image/png;base64,...') to be considered alongside the textual prompt. This allows the AI to understand the visual context if the prompt relates to an image."),
 });
 export type AnalyzePromptInput = z.infer<typeof AnalyzePromptInputSchema>;
 
@@ -75,8 +76,14 @@ const analyzePromptPrompt = ai.definePrompt({
   name: 'analyzePromptPrompt',
   input: {schema: AnalyzePromptInputSchema},
   output: {schema: AnalyzePromptOutputSchema},
-  prompt: `You are an AI prompt analyzer and LLM consultant. Analyze the following prompt and provide a comprehensive evaluation.
-Consider the context provided:
+  prompt: `You are an AI prompt analyzer and LLM consultant. Analyze the following textual prompt and provide a comprehensive evaluation.
+{{#if imageDataUri}}
+The user has also provided an image as context. Your analysis of the textual prompt should take this image into account.
+Image Context:
+{{media url=imageDataUri}}
+{{/if}}
+
+Consider the other context provided:
 {{#if llmType}}
 - LLM Type: {{{llmType}}} (Tailor suggestions if the prompt is for code generation, creative writing, image generation, specific research, or general purpose.)
 {{/if}}
@@ -94,13 +101,18 @@ Active AI Persona Instructions:
 (Your analysis, suggestions, and model recommendation should align with and consider these persona instructions.)
 {{/if}}
 
-Prompt: {{{prompt}}}
+Textual Prompt to Analyze:
+{{{prompt}}}
 
 Analysis (General Evaluation):
-Provide your general analysis of the prompt here.
+Provide your general analysis of the prompt here. If an image was provided, comment on how the textual prompt relates to it (e.g., is it for describing, modifying, or using the image as inspiration?).
 
 Suggestions:
-Provide an array of specific, actionable suggestions for improvement based on the prompt itself and the provided context like LLM type, research depth, and persona instructions.
+Provide an array of specific, actionable suggestions for improvement based on the prompt itself and ALL provided context (LLM type, research depth, persona instructions, AND THE IMAGE if one was provided).
+For example, if an image is present:
+- If the prompt seems to describe the image, suggest ways to make the description more accurate, detailed, or evocative.
+- If the prompt is for generating a new image based on or modifying the provided image, suggest how to clarify instructions regarding style, changes, or elements to preserve/alter.
+- If the prompt is unclear in its relation to the image, suggest clarifying this relationship.
 
 Advanced Prompt Metrics:
 
@@ -142,7 +154,7 @@ Advanced Prompt Metrics:
     Populate 'tokenCountEstimation' with a number. If you cannot reliably estimate, you may omit this field or provide 0 and briefly state why in the general analysis.
 
 Model Suggestion:
-Based on the prompt's content, the selected LLM Type (if any), whether it's for deep research, and any active persona instructions, suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice.
+Based on the prompt's content, the selected LLM Type (if any), whether it's for deep research, any active persona instructions, and whether an image was provided (which might imply a vision-capable model), suggest the most suitable LLM model from the list below. Provide a brief reasoning for your choice.
 - You MUST populate the 'suggestedModel' and 'modelSuggestionReasoning' fields in your JSON output.
 - If a specific model is a clear fit, suggest it and explain why.
 - If multiple models could work, pick the one you deem most versatile or generally applicable for the task and explain your choice.
@@ -187,3 +199,4 @@ const analyzePromptFlow = ai.defineFlow(
     return output!;
   }
 );
+
