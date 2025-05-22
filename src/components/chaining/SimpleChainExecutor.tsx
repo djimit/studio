@@ -16,7 +16,7 @@ interface SimpleChainExecutorProps {
   step1Output: string | null;
   finalOutput: string | null;
   error: string | null;
-  disabled?: boolean; 
+  disabled?: boolean;
 }
 
 export function SimpleChainExecutor({
@@ -37,6 +37,8 @@ export function SimpleChainExecutor({
     }
   };
 
+  const uniqueIdPrefix = "chain-exec-ultra-unique-v7";
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -51,9 +53,9 @@ export function SimpleChainExecutor({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="step1-prompt-chain-executor-final-final-check-v2">Step 1 Prompt</Label>
+            <Label htmlFor={`${uniqueIdPrefix}-step1-prompt`}>Step 1 Prompt</Label>
             <Textarea
-              id="step1-prompt-chain-executor-final-final-check-v2"
+              id={`${uniqueIdPrefix}-step1-prompt`}
               placeholder="e.g., Summarize the following text: [some long text]"
               value={step1Prompt}
               onChange={(e) => setStep1Prompt(e.target.value)}
@@ -63,9 +65,9 @@ export function SimpleChainExecutor({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="step2-prompt-template-chain-executor-final-final-check-v2">Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
+            <Label htmlFor={`${uniqueIdPrefix}-step2-template`}>Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
             <Textarea
-              id="step2-prompt-template-chain-executor-final-final-check-v2"
+              id={`${uniqueIdPrefix}-step2-template`}
               placeholder="e.g., Based on the summary: {{{step1Output}}}, what are the key takeaways?"
               value={step2PromptTemplate}
               onChange={(e) => setStep2PromptTemplate(e.target.value)}
@@ -113,9 +115,9 @@ export function SimpleChainExecutor({
 
         {step1Output !== null && !error && (
           <div className="mt-6 space-y-2">
-            <Label htmlFor="step1-output-chain-executor-final-final-check-v2" className="text-md font-semibold">Step 1 Output:</Label>
+            <Label htmlFor={`${uniqueIdPrefix}-step1-output`} className="text-md font-semibold">Step 1 Output:</Label>
             <Textarea
-              id="step1-output-chain-executor-final-final-check-v2"
+              id={`${uniqueIdPrefix}-step1-output`}
               value={step1Output}
               readOnly
               rows={5}
@@ -127,9 +129,9 @@ export function SimpleChainExecutor({
 
         {finalOutput !== null && !error &&(
           <div className="mt-4 space-y-2">
-            <Label htmlFor="final-output-chain-executor-final-final-check-v2" className="text-md font-semibold">Final Output (from Step 2):</Label>
+            <Label htmlFor={`${uniqueIdPrefix}-final-output`} className="text-md font-semibold">Final Output (from Step 2):</Label>
             <Textarea
-              id="final-output-chain-executor-final-final-check-v2"
+              id={`${uniqueIdPrefix}-final-output`}
               value={finalOutput}
               readOnly
               rows={8}
