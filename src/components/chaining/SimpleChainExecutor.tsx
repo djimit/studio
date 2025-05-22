@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2, Play, AlertTriangle } from 'lucide-react'; // Removed ChevronRight as it's not used
+import { Loader2, Play, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -16,7 +16,7 @@ interface SimpleChainExecutorProps {
   step1Output: string | null;
   finalOutput: string | null;
   error: string | null;
-  disabled?: boolean; // To disable inputs/button during global loading
+  disabled?: boolean; 
 }
 
 export function SimpleChainExecutor({
@@ -51,9 +51,9 @@ export function SimpleChainExecutor({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="step1-prompt-chain">Step 1 Prompt</Label>
+            <Label htmlFor="step1-prompt-chain-executor-vFinal">Step 1 Prompt</Label>
             <Textarea
-              id="step1-prompt-chain"
+              id="step1-prompt-chain-executor-vFinal"
               placeholder="e.g., Summarize the following text: [some long text]"
               value={step1Prompt}
               onChange={(e) => setStep1Prompt(e.target.value)}
@@ -63,9 +63,9 @@ export function SimpleChainExecutor({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="step2-prompt-template-chain">Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
+            <Label htmlFor="step2-prompt-template-chain-executor-vFinal">Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
             <Textarea
-              id="step2-prompt-template-chain"
+              id="step2-prompt-template-chain-executor-vFinal"
               placeholder="e.g., Based on the summary: {{{step1Output}}}, what are the key takeaways?"
               value={step2PromptTemplate}
               onChange={(e) => setStep2PromptTemplate(e.target.value)}
@@ -113,9 +113,9 @@ export function SimpleChainExecutor({
 
         {step1Output !== null && !error && (
           <div className="mt-6 space-y-2">
-            <Label htmlFor="step1-output-chain" className="text-md font-semibold">Step 1 Output:</Label>
+            <Label htmlFor="step1-output-chain-executor-vFinal" className="text-md font-semibold">Step 1 Output:</Label>
             <Textarea
-              id="step1-output-chain"
+              id="step1-output-chain-executor-vFinal"
               value={step1Output}
               readOnly
               rows={5}
@@ -127,9 +127,9 @@ export function SimpleChainExecutor({
 
         {finalOutput !== null && !error &&(
           <div className="mt-4 space-y-2">
-            <Label htmlFor="final-output-chain" className="text-md font-semibold">Final Output (from Step 2):</Label>
+            <Label htmlFor="final-output-chain-executor-vFinal" className="text-md font-semibold">Final Output (from Step 2):</Label>
             <Textarea
-              id="final-output-chain"
+              id="final-output-chain-executor-vFinal"
               value={finalOutput}
               readOnly
               rows={8}
