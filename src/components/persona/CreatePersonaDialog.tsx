@@ -28,6 +28,7 @@ const personaFormSchema = z.object({
   name: z.string().min(2, { message: "Persona name must be at least 2 characters." }).max(50, { message: "Persona name must not exceed 50 characters." }),
   description: z.string().min(5, { message: "Description must be at least 5 characters." }).max(200, { message: "Description must not exceed 200 characters." }),
   instructions: z.string().min(10, { message: "AI instructions must be at least 10 characters." }).max(2000, { message: "AI instructions must not exceed 2000 characters." }),
+  examples: z.string().max(5000, { message: "Examples must not exceed 5000 characters." }).optional(),
 });
 
 export type PersonaFormData = z.infer<typeof personaFormSchema>;
@@ -46,6 +47,7 @@ export function CreatePersonaDialog({ onPersonaCreated, children, open, onOpenCh
       name: "",
       description: "",
       instructions: "",
+      examples: "",
     },
   });
   const { toast } = useToast();
@@ -73,17 +75,17 @@ export function CreatePersonaDialog({ onPersonaCreated, children, open, onOpenCh
   return (
     <Dialog open={open} onOpenChange={handleDialogStateChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[525px] md:max-w-[650px]">
+      <DialogContent className="sm:max-w-[525px] md:max-w-[750px]"> {/* Increased width for examples */}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserSquare2 className="h-6 w-6 text-primary" /> Create New AI Persona
           </DialogTitle>
           <DialogDescription>
-            Define a new persona with specific instructions for the AI. This will help tailor analysis and suggestions.
+            Define a new persona with specific instructions and examples for the AI. This will help tailor analysis and suggestions.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
             <FormField
               control={form.control}
               name="name"
@@ -126,6 +128,26 @@ export function CreatePersonaDialog({ onPersonaCreated, children, open, onOpenCh
                     />
                   </FormControl>
                   <FormDescription>Detailed instructions for the AI when this persona is active. This will be included in the context for analysis.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="examples"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Examples (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Provide examples of prompts this persona might write, or desired output styles. For instance:\n\nExample Input Prompt Persona Might Refine:\n'How do I sort a list in Python?'\n\nExample Output Style this Persona Aims For:\n'For sorting lists in Python, the `sort()` method modifies the list in-place, while `sorted()` returns a new sorted list. For simple ascending order, `my_list.sort()` is common. For custom sorting, use the `key` argument...'"
+                      {...field} 
+                      rows={8} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Add example prompts, desired output styles, or other contextual examples. This will be appended to the AI Instructions when the persona is active.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

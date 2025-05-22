@@ -6,6 +6,7 @@ export interface Persona {
   name: string;
   description: string;
   instructions: string; // Instructions for the AI
+  examples?: string; // Optional field for example prompts or output styles
   timestamp: number;
 }
 
@@ -42,7 +43,7 @@ export function savePersonas(personas: Persona[]): void {
 }
 
 export function addPersona(personaData: Omit<Persona, 'id' | 'timestamp'>): Persona[] {
-  const currentPersonas = getPersonas(); // Corrected: was getHistory()
+  const currentPersonas = getPersonas();
   const newPersona: Persona = {
     ...personaData,
     id: Date.now().toString() + Math.random().toString(36).substring(2, 9),

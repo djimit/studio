@@ -142,6 +142,18 @@ export default function PromptRefinerPage() {
     setPersonas(getPersonas());
   }, []);
 
+  const getActivePersonaCombinedInstructions = (): string | undefined => {
+    if (!selectedPersonaId) return undefined;
+    const activePersona = personas.find(p => p.id === selectedPersonaId);
+    if (!activePersona) return undefined;
+
+    let combined = activePersona.instructions;
+    if (activePersona.examples) {
+      combined += `\n\n--- Additional Examples/Context for Persona ---\n${activePersona.examples}`;
+    }
+    return combined;
+  };
+
   const resetSecondaryStates = () => {
     setAnalysisResult(null); 
     setAnalysisError(null); 
@@ -157,15 +169,13 @@ export default function PromptRefinerPage() {
     // Note: selectedPersonaId is NOT reset here, user's persona choice should persist
   }
 
-  const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean, personaInstructions?: string) => {
+  const handleAnalyzePrompt = async (prompt: string, llmType?: LlmType, isDeepResearch?: boolean) => {
     setOriginalPrompt(prompt); 
     setOriginalLlmType(llmType);
     setOriginalIsDeepResearch(isDeepResearch);
-    // selectedPersonaId is already managed by its own handler
-
+    
     setIsLoadingAnalysis(true);
     resetSecondaryStates(); 
-
 
     const analysisInput: AnalyzePromptInput = { prompt };
     if (llmType) {
@@ -174,8 +184,10 @@ export default function PromptRefinerPage() {
     if (isDeepResearch !== undefined) {
       analysisInput.isDeepResearch = isDeepResearch;
     }
-    if (personaInstructions) {
-      analysisInput.personaInstructions = personaInstructions;
+    
+    const personaInstructionsForFlow = getActivePersonaCombinedInstructions();
+    if (personaInstructionsForFlow) {
+      analysisInput.personaInstructions = personaInstructionsForFlow;
     }
 
     try {
@@ -186,13 +198,10 @@ export default function PromptRefinerPage() {
         result.suggestions.forEach(s => initialSelectedSuggestions[s] = true); 
         setSelectedSuggestionsForEnhancement(initialSelectedSuggestions);
       }
-      // Add to history with current persona context
-      const activePersona = personas.find(p => p.id === selectedPersonaId);
       setHistory(addHistoryItem({ 
         originalPrompt: prompt, 
         originalLlmType: llmType, 
         originalIsDeepResearch: isDeepResearch, 
-        // Consider storing selectedPersonaId or personaName in history if needed for display
         analysisResult: result 
       }));
       toast({
@@ -221,13 +230,13 @@ export default function PromptRefinerPage() {
     setSuggestionPreviewError(null);
     setPromptForPreviewComparison(null);
 
-    const activePersona = personas.find(p => p.id === selectedPersonaId);
     const applyInput: ApplySingleSuggestionInput = {
       originalPrompt: currentOriginalPrompt,
       suggestionToApply: suggestion,
     };
-    if (activePersona?.instructions) {
-      applyInput.personaInstructions = activePersona.instructions;
+    const personaInstructionsForFlow = getActivePersonaCombinedInstructions();
+    if (personaInstructionsForFlow) {
+      applyInput.personaInstructions = personaInstructionsForFlow;
     }
 
     try {
@@ -268,7 +277,6 @@ export default function PromptRefinerPage() {
     setSuggestionExplanation(null);
     setExplanationError(null);
 
-    const activePersona = personas.find(p => p.id === selectedPersonaId);
     const input: ExplainSuggestionInput = {
       originalPrompt,
       suggestionToExplain: suggestion,
@@ -279,8 +287,9 @@ export default function PromptRefinerPage() {
     if (originalIsDeepResearch !== undefined) {
       input.isDeepResearch = originalIsDeepResearch;
     }
-    if (activePersona?.instructions) {
-      input.personaInstructions = activePersona.instructions;
+    const personaInstructionsForFlow = getActivePersonaCombinedInstructions();
+    if (personaInstructionsForFlow) {
+      input.personaInstructions = personaInstructionsForFlow;
     }
     
     try {
@@ -315,14 +324,14 @@ export default function PromptRefinerPage() {
       (suggestion) => selectedSuggestionsForEnhancement[suggestion]
     );
     
-    const activePersona = personas.find(p => p.id === selectedPersonaId);
     const generationInput: EnhancedPromptGenerationInput = {
       originalPrompt,
       suggestions: activeSuggestions,
       format: selectedFormat,
     };
-    if (activePersona?.instructions) {
-      generationInput.personaInstructions = activePersona.instructions;
+    const personaInstructionsForFlow = getActivePersonaCombinedInstructions();
+    if (personaInstructionsForFlow) {
+      generationInput.personaInstructions = personaInstructionsForFlow;
     }
 
     try {
@@ -349,7 +358,6 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(template.prompt);
     setOriginalLlmType(template.llmType);
     setOriginalIsDeepResearch(template.isDeepResearch);
-    // Consider if selecting a template should clear the selected persona or not. For now, it persists.
     resetSecondaryStates();
     toast({
       title: "Template Loaded",
@@ -361,7 +369,6 @@ export default function PromptRefinerPage() {
     setOriginalPrompt(item.originalPrompt);
     setOriginalLlmType(item.originalLlmType);
     setOriginalIsDeepResearch(item.originalIsDeepResearch);
-    // Note: Persona selection from history item is not implemented yet. Current persona selection persists.
     
     resetSecondaryStates(); 
     
@@ -406,7 +413,6 @@ export default function PromptRefinerPage() {
 
   const handlePersonasChanged = (updatedPersonas: Persona[]) => {
     setPersonas(updatedPersonas);
-    // If the currently selected persona was deleted, reset selection
     if (selectedPersonaId && !updatedPersonas.find(p => p.id === selectedPersonaId)) {
       setSelectedPersonaId(undefined);
     }
@@ -414,8 +420,6 @@ export default function PromptRefinerPage() {
 
   const handleSelectPersona = (personaId?: string) => {
     setSelectedPersonaId(personaId);
-    // Optionally, re-analyze if a prompt is already present when persona changes. For now, user needs to click Analyze.
-    // resetSecondaryStates(); // Or just reset analysisResult
   };
 
 
