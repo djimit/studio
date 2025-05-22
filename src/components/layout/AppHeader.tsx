@@ -1,3 +1,4 @@
+import React from 'react';
 import { PenLine } from 'lucide-react';
 
 export function AppHeader() {

@@ -47,7 +47,7 @@ export function SimpleChainExecutor({
           <span>Simple Two-Step Chain Executor</span>
         </CardTitle>
         <CardDescription>
-          Define two prompts. The output of Step 1 will be substituted into Step 2 where `{{{step1Output}}}` is written.
+          Define two prompts. The output of Step 1 will be substituted into Step 2 where {'{{'}{'step1Output'}{'}}'} is written.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -65,7 +65,7 @@ export function SimpleChainExecutor({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`${uniqueIdPrefix}-step2-template`}>Step 2 Prompt Template (use `{{{step1Output}}}`)</Label>
+            <Label htmlFor={`${uniqueIdPrefix}-step2-template`}>Step 2 Prompt Template (use {'{{'}{'step1Output'}{'}}'})</Label>
             <Textarea
               id={`${uniqueIdPrefix}-step2-template`}
               placeholder="e.g., Based on the summary: {{{step1Output}}}, what are the key takeaways?"
