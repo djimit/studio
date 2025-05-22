@@ -193,8 +193,19 @@ export default function PromptRefinerPage() {
     if (isDeepResearch !== undefined) {
       analysisInput.isDeepResearch = isDeepResearch;
     }
-    if (imgDataUri && imgDataUri.trim()) {
-      analysisInput.imageDataUri = imgDataUri;
+    
+    const trimmedImgDataUri = imgDataUri?.trim();
+    if (trimmedImgDataUri) {
+      if (trimmedImgDataUri.startsWith('data:')) {
+        analysisInput.imageDataUri = trimmedImgDataUri;
+      } else {
+        toast({
+          title: "Invalid Image Data URI",
+          description: "The provided Image Data URI is not valid and was not sent for analysis. It must start with 'data:'.",
+          variant: "destructive",
+        });
+        // Do not set analysisInput.imageDataUri if invalid
+      }
     }
     
     const personaInstructionsForFlow = getActivePersonaCombinedInstructions();
@@ -214,7 +225,6 @@ export default function PromptRefinerPage() {
         originalPrompt: prompt, 
         originalLlmType: llmType, 
         originalIsDeepResearch: isDeepResearch,
-        // imageDataUri: imgDataUri, // Consider adding to history if needed for reload
         analysisResult: result 
       }));
       toast({
@@ -241,7 +251,7 @@ export default function PromptRefinerPage() {
     setIsPreviewingSuggestion(true);
     setSuggestionPreview(null);
     setSuggestionPreviewError(null);
-    setPromptForPreviewComparison(null);
+    setPromptForPreviewComparison(null); // Clear previous comparison prompt
 
     const applyInput: ApplySingleSuggestionInput = {
       originalPrompt: currentOriginalPrompt,
