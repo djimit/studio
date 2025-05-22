@@ -42,7 +42,7 @@ export function savePersonas(personas: Persona[]): void {
 }
 
 export function addPersona(personaData: Omit<Persona, 'id' | 'timestamp'>): Persona[] {
-  const currentPersonas = getPersonas();
+  const currentPersonas = getPersonas(); // Corrected: was getHistory()
   const newPersona: Persona = {
     ...personaData,
     id: Date.now().toString() + Math.random().toString(36).substring(2, 9),

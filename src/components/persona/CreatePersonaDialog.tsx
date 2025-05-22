@@ -49,19 +49,10 @@ export function CreatePersonaDialog({ onPersonaCreated, children, open, onOpenCh
     },
   });
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = React.useState(open ?? false);
 
-  React.useEffect(() => {
-    if (open !== undefined) {
-      setIsDialogOpen(open);
-    }
-  }, [open]);
-
-  const handleOpenChange = (newOpenState: boolean) => {
+  const handleDialogStateChange = (newOpenState: boolean) => {
     if (onOpenChange) {
       onOpenChange(newOpenState);
-    } else {
-      setIsDialogOpen(newOpenState);
     }
     if (!newOpenState) {
       form.reset(); // Reset form when dialog closes
@@ -74,11 +65,13 @@ export function CreatePersonaDialog({ onPersonaCreated, children, open, onOpenCh
       title: "Persona Created",
       description: `"${data.name}" has been successfully created.`,
     });
-    handleOpenChange(false); // Close dialog
+    if (onOpenChange) {
+      onOpenChange(false); // Request close
+    }
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogStateChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[525px] md:max-w-[650px]">
         <DialogHeader>
