@@ -8,6 +8,7 @@ import { generateEnhancedPrompt, type EnhancedPromptGenerationInput } from '@/ai
 import { applySingleSuggestion, type ApplySingleSuggestionInput } from '@/ai/flows/apply-single-suggestion-flow';
 import type { ApplySingleSuggestionOutput } from '@/ai/flows/apply-single-suggestion-flow';
 import { explainSuggestion, type ExplainSuggestionInput, type ExplainSuggestionOutput } from '@/ai/flows/explain-suggestion-flow';
+import { runTwoStepChain, type TwoStepChainInput, type TwoStepChainOutput } from '@/ai/flows/execute-two-step-chain';
 import { getHistory, addHistoryItem, clearHistory as clearHistoryStorage, type HistoryItem } from '@/lib/history';
 import type { Persona } from '@/lib/personas';
 import { getPersonas, addPersona as addPersonaStorage, deletePersona as deletePersonaStorage } from '@/lib/personas';
@@ -24,6 +25,7 @@ import { EnhancedPromptDisplay } from '@/components/prompt/EnhancedPromptDisplay
 import { PromptTemplateLibrary, type PromptTemplate } from '@/components/prompt/PromptTemplateLibrary';
 import { PromptHistoryDisplay } from '@/components/prompt/PromptHistoryDisplay';
 import { PersonaManager } from '@/components/persona/PersonaManager';
+import { SimpleChainExecutor } from '@/components/chaining/SimpleChainExecutor';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
@@ -135,6 +137,12 @@ export default function PromptRefinerPage() {
 
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | undefined>(undefined);
+
+  // State for SimpleChainExecutor
+  const [isLoadingChain, setIsLoadingChain] = useState<boolean>(false);
+  const [chainStep1Output, setChainStep1Output] = useState<string | null>(null);
+  const [chainFinalOutput, setChainFinalOutput] = useState<string | null>(null);
+  const [chainError, setChainError] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -451,8 +459,36 @@ export default function PromptRefinerPage() {
     setSelectedPersonaId(personaId);
   };
 
+  const handleRunChain = async (step1Prompt: string, step2PromptTemplate: string) => {
+    setIsLoadingChain(true);
+    setChainStep1Output(null);
+    setChainFinalOutput(null);
+    setChainError(null);
 
-  const anyLoading = isLoadingAnalysis || isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation;
+    const chainInput: TwoStepChainInput = { step1Prompt, step2PromptTemplate };
+    try {
+      const result = await runTwoStepChain(chainInput);
+      setChainStep1Output(result.step1Output);
+      setChainFinalOutput(result.finalOutput);
+      toast({
+        title: "Chain Executed",
+        description: "Two-step prompt chain completed successfully.",
+      });
+    } catch (error) {
+      const errorMessage = getDetailedErrorMessage(error, "two-step chain execution");
+      setChainError(errorMessage);
+      toast({
+        title: "Chain Execution Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingChain(false);
+    }
+  };
+
+
+  const anyLoading = isLoadingAnalysis || isLoadingEnhancedPrompt || isPreviewingSuggestion || isLoadingExplanation || isLoadingChain;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -540,6 +576,15 @@ export default function PromptRefinerPage() {
               />
             </>
           )}
+          <Separator />
+          <SimpleChainExecutor 
+            onRunChain={handleRunChain}
+            isLoading={isLoadingChain}
+            step1Output={chainStep1Output}
+            finalOutput={chainFinalOutput}
+            error={chainError}
+            disabled={anyLoading && !isLoadingChain} // Disable if globally loading, but not if it's this component's own loading
+          />
           <Separator />
           <PromptHistoryDisplay
             history={history}
