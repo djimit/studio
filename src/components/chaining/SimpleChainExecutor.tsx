@@ -4,7 +4,14 @@
 import * as React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Loader2, Play, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -37,7 +44,7 @@ export function SimpleChainExecutor({
     }
   };
 
-  const uniqueIdPrefix = "chain-exec-ultra-unique-v7"; // Using a very unique prefix
+  const uniqueIdPrefix = "chain-exec-final-attempt";
 
   return (
     <Card className="shadow-lg">
